@@ -8,9 +8,6 @@
 # Uncomment this line if you wish to ignore the asset store tools plugin
 # [Aa]ssets/AssetStoreTools*
 
-# Visual Studio cache directory
-.vs/
-
 # Gradle cache directory
 .gradle/
 
@@ -42,8 +39,14 @@ sysinfo.txt
 
 # Builds
 *.apk
-*.unitypackage
+*.aab
+
+# General
 *.mp4
+*.rar
+*.unitypackage
+*.zip
 
 # Crashlytics generated file
 crashlytics-build.properties
+.vscode/launch.json

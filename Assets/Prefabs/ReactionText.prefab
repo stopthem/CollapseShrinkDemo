@@ -35,7 +35,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 0, y: 82}
+  m_AnchoredPosition: {x: 0, y: 1080}
   m_SizeDelta: {x: 1000, y: 200}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &4693821302196317874
@@ -150,10 +150,10 @@ MonoBehaviour:
   text: {fileID: 4693821302196317877}
   topToBottomStartPos: {x: 0, y: 1042}
   topToBottomFinishPos: {x: 0, y: 480}
-  rightToLeftStartPos: {x: 840, y: 500}
-  rightToLeftFinishPos: {x: -860, y: 500}
-  leftToRightStartPos: {x: -860, y: 500}
-  leftToRightFinishPos: {x: 840, y: 500}
+  rightToLeftStartPos: {x: 1080, y: 500}
+  rightToLeftFinishPos: {x: -1080, y: 500}
+  leftToRightStartPos: {x: -1080, y: 500}
+  leftToRightFinishPos: {x: 1080, y: 500}
   topToBottomSpeed: 2.5
   xSpeed: 1
   classicCurve:

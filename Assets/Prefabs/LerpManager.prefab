@@ -12,7 +12,7 @@ GameObject:
   - component: {fileID: 4224616586992392350}
   m_Layer: 0
   m_Name: LerpManager
-  m_TagString: Untagged
+  m_TagString: LerpManager
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -139,31 +139,31 @@ MonoBehaviour:
   - serializedVersion: 2
     m_Curve:
     - serializedVersion: 3
-      time: 0
+      time: -0.00077819824
       value: 0
-      inSlope: 2.0022686
-      outSlope: 2.0022686
-      tangentMode: 34
+      inSlope: 0.015495839
+      outSlope: 0.015495839
+      tangentMode: 0
       weightedMode: 0
       inWeight: 0
-      outWeight: 0.33333334
+      outWeight: 0.13030398
     - serializedVersion: 3
       time: 0.4994335
-      value: 1
-      inSlope: 0.0022659302
-      outSlope: 0.0022659302
-      tangentMode: 34
+      value: 0.9976387
+      inSlope: 0.0007067919
+      outSlope: 0.0007067919
+      tangentMode: 1
       weightedMode: 0
       inWeight: 0.33333334
       outWeight: 0.33333334
     - serializedVersion: 3
       time: 1
       value: 0
-      inSlope: -1.9977367
-      outSlope: -1.9977367
-      tangentMode: 34
+      inSlope: -0.29839155
+      outSlope: -0.29839155
+      tangentMode: 0
       weightedMode: 0
-      inWeight: 0.33333334
+      inWeight: 0.1333125
       outWeight: 0
     m_PreInfinity: 2
     m_PostInfinity: 2
