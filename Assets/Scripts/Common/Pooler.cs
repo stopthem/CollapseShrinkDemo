@@ -35,7 +35,10 @@ public class Pooler : MonoBehaviour
                 Transform makeChild = makeChildOf ? makeChildOf : transform;
                 item.transform.SetParent(makeChild, worldPositionStays);
 
-                pooledObjects.Add(item.GetComponent<Poolable>());
+                Poolable itemPoolable = item.GetComponent<Poolable>();
+                if (!itemPoolable) itemPoolable = item.AddComponent<Poolable>();
+
+                pooledObjects.Add(itemPoolable);
                 list.Add(item);
             }
         }
@@ -44,8 +47,6 @@ public class Pooler : MonoBehaviour
         {
             item.SetActive(true);
             Poolable itemPoolable = item.GetComponent<Poolable>();
-
-            if (!itemPoolable) itemPoolable = item.AddComponent<Poolable>();
 
             itemPoolable.imTaken = true;
             itemPoolable.myPooler = this;
