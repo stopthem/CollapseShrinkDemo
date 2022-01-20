@@ -36,7 +36,7 @@ public class GamePiece : MonoBehaviour
         {
             this.x = x;
             this.y = y;
-            Board.Instance.PlaceGamePieceAt(x, y, this);
+            Board.Instance.UpdateGamePieceAt(x, y, this);
         });
     }
 }

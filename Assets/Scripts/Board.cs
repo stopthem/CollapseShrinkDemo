@@ -18,7 +18,6 @@ public class Board : Singleton<Board>
     private Tile[,] _tiles;
     [SerializeField] private GameObject tilePf;
 
-
     [SerializeField, Space(10)] private int minPiecesToExplode = 2;
     [SerializeField, Space(10)] private float piecesMoveTime = .5f;
     [SerializeField] private float timeBetweenFillPieces = .025f;
@@ -58,17 +57,17 @@ public class Board : Singleton<Board>
         WaitAndCheckDeadlock();
     }
 
-    private void MakePiece(int x, int y)
-    {
-        var piece = PoolerHandler.ReturnPooler("GamePiecePooler").GetObject();
-        piece.transform.position = new Vector2(x, y);
-        piece.name = "GamePiece " + "x" + x + " y" + y;
+    // private void MakePiece(int x, int y)
+    // {
+    //     var piece = PoolerHandler.ReturnPooler("GamePiecePooler").GetObject();
+    //     piece.transform.position = new Vector2(x, y);
+    //     piece.name = "GamePiece " + "x" + x + " y" + y;
 
-        int selectedColor = UnityEngine.Random.Range(0, _selectedColors.Count);
-        GamePiece gamePiece = piece.GetComponent<GamePiece>();
-        gamePiece.Init(x, y, gamePieceDefaultIcons[selectedColor], (MatchValue)selectedColor);
-        _gamePieces[x, y] = gamePiece;
-    }
+    //     int selectedColor = UnityEngine.Random.Range(0, _selectedColors.Count);
+    //     GamePiece gamePiece = piece.GetComponent<GamePiece>();
+    //     gamePiece.Init(x, y, gamePieceDefaultIcons[selectedColor], (MatchValue)selectedColor);
+    //     _gamePieces[x, y] = gamePiece;
+    // }
 
     private GamePiece MakeFillPiece(int x, int y)
     {
@@ -183,7 +182,7 @@ public class Board : Singleton<Board>
 
     public bool IsWithinBounds(int x, int y) => (x < width && x >= 0) && (y >= 0 && y < height);
 
-    #region  neighbour things
+    #region  neighbour finding
     public List<GamePiece> FindAllNeighboursRecursive(GamePiece gamePiece, bool findMatchedOnes = true, List<GamePiece> result = null)
     {
         List<GamePiece> clickedNeighbours = FindNeighbours(gamePiece.x, gamePiece.y, true);
@@ -312,7 +311,7 @@ public class Board : Singleton<Board>
         });
     }
     #endregion
-    public void PlaceGamePieceAt(int x, int y, GamePiece piece)
+    public void UpdateGamePieceAt(int x, int y, GamePiece piece)
     {
         _gamePieces[x, y] = piece;
         piece.name = "GamePiece " + "x" + x + " y" + y;
