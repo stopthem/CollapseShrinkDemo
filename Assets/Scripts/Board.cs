@@ -8,16 +8,22 @@ public class Board : Singleton<Board>
     private BoardConditionChecker _boardConditionChecker;
 
     [SerializeField] private int width = 10, height = 10;
+    [SerializeField] private int differentColorCount;
+    private List<int> _selectedColors;
     public Sprite[] gamePieceDefaultIcons;
 
     private GamePiece[,] _gamePieces;
-    private int[,] _tiles;
 
-    private List<GamePiece> _explodingPieces = new List<GamePiece>();
-    [SerializeField, Space(10)] private int minExplosionCount = 2;
-    public List<int[,]> fillableTiles = new List<int[,]>();
-    [SerializeField, Space(5)] private float piecesMoveTime = .5f;
+    private Tile[,] _tiles;
+    [SerializeField] private GameObject tilePf;
+
+
+    [SerializeField, Space(10)] private int minPiecesToExplode = 2;
+    [SerializeField, Space(10)] private float piecesMoveTime = .5f;
+    [SerializeField] private float timeBetweenFillPieces = .025f;
     private float PiecesMoveSpeed { get => 1 / piecesMoveTime; }
+
+    [SerializeField, Space(10)] private float fillPieceSpawnYOffset = 10;
 
     private void Awake()
     {
@@ -26,23 +32,51 @@ public class Board : Singleton<Board>
 
     private void Start()
     {
+        differentColorCount = Mathf.Clamp(differentColorCount, 0, gamePieceDefaultIcons.Length);
+        int[] colorValues = Enumerable.Range(0, gamePieceDefaultIcons.Length).ToArray();
+        _selectedColors = colorValues.OrderBy(x => Random.Range(0, colorValues.Length)).Take(differentColorCount).ToList();
+
         _gamePieces = new GamePiece[width, height];
-        _tiles = new int[width,height];
+        _tiles = new Tile[width, height];
         for (int x = 0; x < width; x++)
         {
             for (int y = 0; y < height; y++)
             {
-                var tile = PoolerHandler.ReturnPooler("GamePiecePooler").GetObject();
-                tile.transform.position = new Vector2(x, y);
-                tile.name = "x" + x + " y" + y;
-
-                int selectedColor = Random.Range(0, gamePieceDefaultIcons.Length);
-                GamePiece gamePiece = tile.GetComponent<GamePiece>();
-                gamePiece.Init(x, y, gamePieceDefaultIcons[selectedColor], (MatchValue)selectedColor);
-                _gamePieces[x, y] = gamePiece;
+                MakePiece(x, y);
+                GameObject tileObj = Instantiate(tilePf, new Vector2(x, y), Quaternion.identity, transform);
+                Tile tile = tileObj.GetComponent<Tile>();
+                tile.x = x;
+                tile.y = y;
+                _tiles[x, y] = tile;
+                tile.name = "tile " + "x" + x + " y" + y;
             }
         }
-        _boardConditionChecker.CheckConditions(_gamePieces.Cast<GamePiece>().ToList());
+        CheckConditions();
+    }
+
+    private void MakePiece(int x, int y)
+    {
+        var piece = PoolerHandler.ReturnPooler("GamePiecePooler").GetObject();
+        piece.transform.position = new Vector2(x, y);
+        piece.name = "GamePiece " + "x" + x + " y" + y;
+
+        int selectedColor = Random.Range(0, _selectedColors.Count);
+        GamePiece gamePiece = piece.GetComponent<GamePiece>();
+        gamePiece.Init(x, y, gamePieceDefaultIcons[selectedColor], (MatchValue)selectedColor);
+        _gamePieces[x, y] = gamePiece;
+    }
+
+    private GamePiece MakeFillPiece(int x, int y)
+    {
+        var obj = PoolerHandler.ReturnPooler("GamePiecePooler").GetObject();
+        obj.transform.position = new Vector2(x, y + fillPieceSpawnYOffset);
+        obj.name = "GamePiece " + "x" + x + " y" + y;
+
+        int selectedColor = Random.Range(0, _selectedColors.Count);
+        GamePiece gamePiece = obj.GetComponent<GamePiece>();
+        gamePiece.Init(x, y, gamePieceDefaultIcons[selectedColor], (MatchValue)selectedColor);
+        _gamePieces[x, y] = gamePiece;
+        return gamePiece;
     }
 
     private void Update()
@@ -57,25 +91,16 @@ public class Board : Singleton<Board>
                 if (hit.collider) CheckForExplodable(hit.collider.GetComponent<GamePiece>());
             }
         }
-
-        if (Input.GetKeyDown(KeyCode.Space))
-        {
-            foreach (var item in GetColumunOrRawPieces(7))
-            {
-                Explode(item);
-            }
-        }
     }
 
     private void CheckForExplodable(GamePiece clickedPiece)
     {
-        if (_gamePieces[clickedPiece.x, clickedPiece.y] == null || _explodingPieces.FirstOrDefault(x => x.y == clickedPiece.y)) return;
-        var explodableList = FindAllNeighboursRecursive(clickedPiece);
-        explodableList.RemoveAll(x => _explodingPieces.Contains(x));
-        if (explodableList.Count >= minExplosionCount)
-        {
-            _explodingPieces.AddRange(explodableList);
+        if (_gamePieces[clickedPiece.x, clickedPiece.y] == null) return;
 
+        var explodableList = FindAllNeighboursRecursive(clickedPiece);
+
+        if (explodableList.Count >= minPiecesToExplode)
+        {
             foreach (var piece in explodableList)
             {
                 Explode(piece);
@@ -83,34 +108,38 @@ public class Board : Singleton<Board>
 
             foreach (var piece in explodableList)
             {
-                CollapseColumn(piece.x);
+                StartCoroutine(FillBoard(CollapseColumn(piece.x)));
             }
-            LerpManager.Wait(piecesMoveTime, () =>
-             {
-                 LerpManager.WaitForFrames(1, () =>
-                  {
-                      FillCheck();
-                      _boardConditionChecker.CheckConditions(_gamePieces.Cast<GamePiece>().ToList());
-                  });
-             });
+            WaitForPiecesMoveEnd(() =>
+            {
+
+                CheckConditions();
+                WaitForPiecesMoveEnd(() => CheckConditions());
+            });
         }
     }
 
-    private void Explode(GamePiece item)
+    private void CheckConditions() => _boardConditionChecker.CheckConditions(_gamePieces.Cast<GamePiece>().ToList());
+
+    private void WaitForPiecesMoveEnd(System.Action action)
     {
-        var particle = PoolerHandler.ReturnPooler("StartVFXPooler").GetObject();
-        GameManager.PlayParticle(particle, transform, item.transform.position);
-        item.GetComponent<Poolable>().ClearMe();
-        _gamePieces[item.x, item.y] = null;
+        LerpManager.Wait(piecesMoveTime, () =>
+             {
+                 LerpManager.WaitForFrames(1, action);
+             });
     }
 
-    private void CollapseColumn(int column)
+    private void Explode(GamePiece piece)
+    {
+        _gamePieces[piece.x, piece.y] = null;
+        var particle = PoolerHandler.ReturnPooler("StartVFXPooler").GetObject();
+        GameManager.PlayParticle(particle, transform, piece.transform.position);
+        piece.GetComponent<Poolable>().ClearMe();
+    }
+
+    private List<GamePiece> CollapseColumn(int column)
     {
         List<GamePiece> movingPieces = new List<GamePiece>();
-        if (GetColumunOrRawPieces(column).Count == 0)
-        {
-            _explodingPieces.RemoveAll(x => x.x == column);
-        }
 
         for (int i = 0; i < height - 1; i++)
         {
@@ -121,37 +150,41 @@ public class Board : Singleton<Board>
                     if (_gamePieces[column, j] != null)
                     {
                         _gamePieces[column, j].Move(column, i, PiecesMoveSpeed);
+                        _gamePieces[column, i] = _gamePieces[column, j];
+                        _gamePieces[column, i].x = column;
+                        _gamePieces[column, i].y = i;
                         if (!movingPieces.Contains(_gamePieces[column, i])) movingPieces.Add(_gamePieces[column, i]);
                         _gamePieces[column, j] = null;
                         break;
                     }
-                    else
-                    {
-                        _explodingPieces.Remove(_explodingPieces.FirstOrDefault(x => x.x == column && x.y == i));
-                    }
                 }
             }
         }
+        return movingPieces;
     }
 
-    public void PlaceGamePieceAt(int x, int y, GamePiece piece)
+    private bool IsCollapsed(List<GamePiece> gamePieces)
     {
-        _gamePieces[x, y] = piece;
-        _explodingPieces.Remove(_explodingPieces.FirstOrDefault(x => x.x == piece.x && x.y == piece.y));
-        piece.name = "x" + x + " y" + y;
+        foreach (GamePiece piece in gamePieces)
+        {
+            if (piece != null)
+            {
+                if (Mathf.Abs(piece.transform.position.y - (float)piece.y) > 0.001f)
+                {
+                    return false;
+                }
+                if (Mathf.Abs(piece.transform.position.x - (float)piece.x) > 0.001f)
+                {
+                    return false;
+                }
+            }
+        }
+        return true;
     }
 
-    private List<GamePiece> GetColumunOrRawPieces(int column, int rowIndex = 0, bool row = false)
-    {
-        List<GamePiece> pieces = new List<GamePiece>();
-        if (row)
-            pieces = _gamePieces.Cast<GamePiece>().Where(x => x != null && x.y == rowIndex).ToList();
-        else
-            pieces = _gamePieces.Cast<GamePiece>().Where(x => x != null && x.x == column).ToList();
+    public bool IsWithinBounds(int x, int y) => (x < width && x >= 0) && (y >= 0 && y < height);
 
-        return pieces;
-    }
-
+    #region  neighbour things
     public List<GamePiece> FindAllNeighboursRecursive(GamePiece gamePiece, List<GamePiece> result = null)
     {
         List<GamePiece> clickedNeighbours = FindNeighbours(gamePiece.x, gamePiece.y, true);
@@ -185,6 +218,7 @@ public class Board : Singleton<Board>
     private List<GamePiece> FindNeighbours(int x, int y, bool correctMatchValue = false)
     {
         List<GamePiece> neighbours = new List<GamePiece>();
+        if (_gamePieces[x, y] == null) return new List<GamePiece>();
         if (IsWithinBounds(x - 1, y) && _gamePieces[x - 1, y] != null)
         {
             if (correctMatchValue && _gamePieces[x, y].matchValue == _gamePieces[x - 1, y].matchValue) neighbours.Add(_gamePieces[x - 1, y]);
@@ -211,14 +245,53 @@ public class Board : Singleton<Board>
         return neighbours;
     }
 
-    public bool IsWithinBounds(int x, int y) => (x < width && x >= 0) && (y >= 0 && y < height);
+    #endregion
 
-    private void FillCheck()
+    #region fillboard
+    private IEnumerator FillBoard(List<GamePiece> movingPieces)
     {
-        foreach (var item in _gamePieces)
+        if (movingPieces.Count == 0) yield break;
+        while (!IsCollapsed(movingPieces))
         {
-            if (item == null) fillableTiles.Add(new int[,] { { item.x, item.y } });
+            yield return null;
         }
-        print(fillableTiles.Count);
+
+        List<Tile> fillableTiles = new List<Tile>();
+        for (int x = 0; x < width; x++)
+        {
+            for (int y = 0; y < height; y++)
+            {
+                if (_gamePieces[x, y] == null) fillableTiles.Add(_tiles[x, y]);
+            }
+        }
+
+        List<GamePiece> fillPieces = new List<GamePiece>();
+        foreach (var tile in fillableTiles)
+        {
+            fillPieces.Add(MakeFillPiece(tile.x, tile.y));
+        }
+
+        var columnGroups = fillPieces.GroupBy(x => x.x);
+
+        foreach (var column in columnGroups)
+        {
+            DelayedFill(column.Cast<GamePiece>().ToList());
+        }
+    }
+
+    private void DelayedFill(List<GamePiece> gamePieces)
+    {
+        LerpManager.LoopWait(gamePieces.Count, timeBetweenFillPieces,
+        x =>
+        {
+            GamePiece gamePiece = gamePieces[x];
+            gamePiece.Move(gamePiece.x, gamePiece.y, PiecesMoveSpeed);
+        });
+    }
+    #endregion
+    public void PlaceGamePieceAt(int x, int y, GamePiece piece)
+    {
+        _gamePieces[x, y] = piece;
+        piece.name = "GamePiece " + "x" + x + " y" + y;
     }
 }

@@ -15,7 +15,7 @@ GameObject:
   m_Layer: 0
   m_Name: GamePiece
   m_TagString: Untagged
-  m_Icon: {fileID: 5132851093641282708, guid: 0000000000000000d000000000000000, type: 0}
+  m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
@@ -63,6 +63,7 @@ MonoBehaviour:
   y: 0
   matchValue: 0
   _variables: {fileID: 11400000, guid: b2f1275fac08eb645a2e7358ad3d225c, type: 2}
+  _moving: 0
 --- !u!114 &-5462957808708104840
 MonoBehaviour:
   m_ObjectHideFlags: 0

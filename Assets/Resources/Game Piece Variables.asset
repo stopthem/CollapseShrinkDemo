@@ -12,33 +12,32 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4a89e8cbe17933040b3d842da24a4391, type: 3}
   m_Name: Game Piece Variables
   m_EditorClassIdentifier: 
-  pieceMoveSpeed: 2
   pieceMoveCurve:
     serializedVersion: 2
     m_Curve:
     - serializedVersion: 3
       time: 0
       value: 0
-      inSlope: 1.9979638
-      outSlope: 1.9979638
-      tangentMode: 34
+      inSlope: 0.295602
+      outSlope: 0.295602
+      tangentMode: 0
       weightedMode: 0
       inWeight: 0
-      outWeight: 0.33333334
+      outWeight: 0.103340864
     - serializedVersion: 3
-      time: 0.50050956
-      value: 1
-      inSlope: 0.21671934
-      outSlope: 0.21671934
+      time: 0.6958831
+      value: 1.0023613
+      inSlope: -0.04875905
+      outSlope: -0.04875905
       tangentMode: 0
       weightedMode: 0
       inWeight: 0.33333334
-      outWeight: 0.2601983
+      outWeight: 0.4200117
     - serializedVersion: 3
-      time: 0.7514621
-      value: 0.8641449
-      inSlope: 0.002629757
-      outSlope: 0.002629757
+      time: 0.8519119
+      value: 0.96576464
+      inSlope: -0.0016841292
+      outSlope: -0.0016841292
       tangentMode: 34
       weightedMode: 0
       inWeight: 0.33333334

@@ -9,6 +9,8 @@ public class GamePiece : MonoBehaviour
 
     [SerializeField] private GamePieceVariables _variables;
 
+    private IEnumerator _movingRoutine;
+
     private SpriteRenderer _spriteRenderer;
 
     private void Awake()
@@ -28,7 +30,8 @@ public class GamePiece : MonoBehaviour
 
     public void Move(int x, int y, float speed)
     {
-        LerpManager.LerpOverTime(transform.position, new Vector2(x, y), speed, x => transform.position = x, overrideCurve: _variables.pieceMoveCurve
+        if (_movingRoutine != null) LerpManager.Instance.StopCoroutine(_movingRoutine);
+        LerpManager.LerpOverTime(transform.position, new Vector2(x, y), speed, x => transform.position = x, out _movingRoutine, overrideCurve: _variables.pieceMoveCurve
         , normalAction: () =>
         {
             this.x = x;
