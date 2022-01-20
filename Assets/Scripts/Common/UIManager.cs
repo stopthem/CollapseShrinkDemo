@@ -31,7 +31,7 @@ public class UIManager : Singleton<UIManager>
 
     private void Start()
     {
-        ShowPanel(menuPanel);
+        // ShowPanel(menuPanel);
     }
 
     public void StartGameButton()

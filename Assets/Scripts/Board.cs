@@ -2,6 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using System.Linq;
+using System;
 
 public class Board : Singleton<Board>
 {
@@ -25,6 +26,8 @@ public class Board : Singleton<Board>
 
     [SerializeField, Space(10)] private float fillPieceSpawnYOffset = 10;
 
+    private bool _canPlay;
+
     private void Awake()
     {
         _boardConditionChecker = GetComponent<BoardConditionChecker>();
@@ -34,15 +37,15 @@ public class Board : Singleton<Board>
     {
         differentColorCount = Mathf.Clamp(differentColorCount, 0, gamePieceDefaultIcons.Length);
         int[] colorValues = Enumerable.Range(0, gamePieceDefaultIcons.Length).ToArray();
-        _selectedColors = colorValues.OrderBy(x => Random.Range(0, colorValues.Length)).Take(differentColorCount).ToList();
+        _selectedColors = colorValues.OrderBy(x => UnityEngine.Random.Range(0, colorValues.Length)).Take(differentColorCount).ToList();
 
         _gamePieces = new GamePiece[width, height];
         _tiles = new Tile[width, height];
+
         for (int x = 0; x < width; x++)
         {
             for (int y = 0; y < height; y++)
             {
-                MakePiece(x, y);
                 GameObject tileObj = Instantiate(tilePf, new Vector2(x, y), Quaternion.identity, transform);
                 Tile tile = tileObj.GetComponent<Tile>();
                 tile.x = x;
@@ -51,7 +54,8 @@ public class Board : Singleton<Board>
                 tile.name = "tile " + "x" + x + " y" + y;
             }
         }
-        CheckConditions();
+        FillBoard();
+        WaitAndCheckDeadlock();
     }
 
     private void MakePiece(int x, int y)
@@ -60,7 +64,7 @@ public class Board : Singleton<Board>
         piece.transform.position = new Vector2(x, y);
         piece.name = "GamePiece " + "x" + x + " y" + y;
 
-        int selectedColor = Random.Range(0, _selectedColors.Count);
+        int selectedColor = UnityEngine.Random.Range(0, _selectedColors.Count);
         GamePiece gamePiece = piece.GetComponent<GamePiece>();
         gamePiece.Init(x, y, gamePieceDefaultIcons[selectedColor], (MatchValue)selectedColor);
         _gamePieces[x, y] = gamePiece;
@@ -72,7 +76,7 @@ public class Board : Singleton<Board>
         obj.transform.position = new Vector2(x, y + fillPieceSpawnYOffset);
         obj.name = "GamePiece " + "x" + x + " y" + y;
 
-        int selectedColor = Random.Range(0, _selectedColors.Count);
+        int selectedColor = UnityEngine.Random.Range(0, _selectedColors.Count);
         GamePiece gamePiece = obj.GetComponent<GamePiece>();
         gamePiece.Init(x, y, gamePieceDefaultIcons[selectedColor], (MatchValue)selectedColor);
         _gamePieces[x, y] = gamePiece;
@@ -81,7 +85,7 @@ public class Board : Singleton<Board>
 
     private void Update()
     {
-        if (GameManager.gameStatus == GameManager.GameStatus.PLAY)
+        if (_canPlay)
         {
             if (Input.GetMouseButtonDown(0))
             {
@@ -108,14 +112,9 @@ public class Board : Singleton<Board>
 
             foreach (var piece in explodableList)
             {
-                StartCoroutine(FillBoard(CollapseColumn(piece.x)));
+                StartCoroutine(WaitForFillBoard(CollapseColumn(piece.x)));
             }
-            WaitForPiecesMoveEnd(() =>
-            {
-
-                CheckConditions();
-                WaitForPiecesMoveEnd(() => CheckConditions());
-            });
+            WaitAndCheckDeadlock();
         }
     }
 
@@ -185,7 +184,7 @@ public class Board : Singleton<Board>
     public bool IsWithinBounds(int x, int y) => (x < width && x >= 0) && (y >= 0 && y < height);
 
     #region  neighbour things
-    public List<GamePiece> FindAllNeighboursRecursive(GamePiece gamePiece, List<GamePiece> result = null)
+    public List<GamePiece> FindAllNeighboursRecursive(GamePiece gamePiece, bool findMatchedOnes = true, List<GamePiece> result = null)
     {
         List<GamePiece> clickedNeighbours = FindNeighbours(gamePiece.x, gamePiece.y, true);
 
@@ -209,7 +208,7 @@ public class Board : Singleton<Board>
 
         foreach (var piece in newPieces)
         {
-            FindAllNeighboursRecursive(piece, result);
+            FindAllNeighboursRecursive(piece, findMatchedOnes, result);
         }
 
         return result;
@@ -248,14 +247,35 @@ public class Board : Singleton<Board>
     #endregion
 
     #region fillboard
-    private IEnumerator FillBoard(List<GamePiece> movingPieces)
+    private IEnumerator WaitForFillBoard(List<GamePiece> movingPieces)
     {
-        if (movingPieces.Count == 0) yield break;
+        if (movingPieces.Count == 0)
+        {
+            WaitForPiecesMoveEnd(() =>
+            {
+                FillBoard();
+            });
+            yield break;
+        }
         while (!IsCollapsed(movingPieces))
         {
             yield return null;
         }
 
+        FillBoard();
+    }
+
+    private void FillBoard(bool clean = false)
+    {
+        if (clean)
+        {
+            foreach (var item in _gamePieces)
+            {
+                if (item == null) continue;
+                item.GetComponent<Poolable>().ClearMe();
+            }
+            Array.Clear(_gamePieces, 0, _gamePieces.Length);
+        }
         List<Tile> fillableTiles = new List<Tile>();
         for (int x = 0; x < width; x++)
         {
@@ -286,6 +306,9 @@ public class Board : Singleton<Board>
         {
             GamePiece gamePiece = gamePieces[x];
             gamePiece.Move(gamePiece.x, gamePiece.y, PiecesMoveSpeed);
+        }, () =>
+        {
+            WaitAndCheckDeadlock(true);
         });
     }
     #endregion
@@ -294,4 +317,34 @@ public class Board : Singleton<Board>
         _gamePieces[x, y] = piece;
         piece.name = "GamePiece " + "x" + x + " y" + y;
     }
+
+    #region deadlock
+    private void WaitAndCheckDeadlock(bool canPlay = false)
+    {
+        WaitForPiecesMoveEnd(() =>
+        {
+            if (!CheckForDeadlock())
+            {
+                CheckConditions();
+                _canPlay = canPlay;
+            }
+            else
+            {
+                ReactionText.CreateText("DEADLOCKED!", Color.white, ReactionText.Directions.TopToBottom, byPassPrevious: true);
+                FillBoard(true);
+            }
+        });
+    }
+
+    private bool CheckForDeadlock()
+    {
+        foreach (var item in _gamePieces)
+        {
+            if (item == null) continue;
+            var list = FindAllNeighboursRecursive(item, false);
+            if (list.Count >= minPiecesToExplode) return false;
+        }
+        return true;
+    }
+    #endregion
 }
