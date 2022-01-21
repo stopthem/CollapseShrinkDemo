@@ -31,13 +31,7 @@ public class GamePiece : MonoBehaviour
     public void Move(int x, int y, float speed)
     {
         if (_movingRoutine != null) LerpManager.Instance.StopCoroutine(_movingRoutine);
-        LerpManager.LerpOverTime(transform.position, new Vector2(x, y), speed, x => transform.position = x, out _movingRoutine, overrideCurve: _variables.pieceMoveCurve
-        , normalAction: () =>
-        {
-            this.x = x;
-            this.y = y;
-            Board.Instance.UpdateGamePieceAt(x, y, this);
-        });
+        LerpManager.LerpOverTime(transform.position, new Vector2(x, y), speed, x => transform.position = x, out _movingRoutine, overrideCurve: _variables.pieceMoveCurve);
     }
 }
 public enum MatchValue

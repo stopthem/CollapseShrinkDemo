@@ -8,8 +8,8 @@ public class Board : Singleton<Board>
 {
     private BoardConditionChecker _boardConditionChecker;
 
-    [SerializeField] private int width = 10, height = 10;
-    [SerializeField] private int differentColorCount;
+    [SerializeField,Range(2,10)] private int width = 10, height = 10;
+    [SerializeField,Range(2,6)] private int availableColorCount;
     private List<int> _selectedColors;
     public Sprite[] gamePieceDefaultIcons;
 
@@ -34,9 +34,7 @@ public class Board : Singleton<Board>
 
     private void Start()
     {
-        differentColorCount = Mathf.Clamp(differentColorCount, 0, gamePieceDefaultIcons.Length);
-        int[] colorValues = Enumerable.Range(0, gamePieceDefaultIcons.Length).ToArray();
-        _selectedColors = colorValues.OrderBy(x => UnityEngine.Random.Range(0, colorValues.Length)).Take(differentColorCount).ToList();
+        SelectColors();
 
         _gamePieces = new GamePiece[width, height];
         _tiles = new Tile[width, height];
@@ -55,6 +53,12 @@ public class Board : Singleton<Board>
         }
         FillBoard();
         WaitAndCheckDeadlock();
+    }
+
+    private void SelectColors()
+    {
+        int[] colorValues = Enumerable.Range(0, gamePieceDefaultIcons.Length).ToArray();
+        _selectedColors = colorValues.OrderBy(x => UnityEngine.Random.Range(0, colorValues.Length)).Take(availableColorCount).ToList();
     }
 
     // private void MakePiece(int x, int y)
@@ -183,9 +187,9 @@ public class Board : Singleton<Board>
     public bool IsWithinBounds(int x, int y) => (x < width && x >= 0) && (y >= 0 && y < height);
 
     #region  neighbour finding
-    public List<GamePiece> FindAllNeighboursRecursive(GamePiece gamePiece, bool findMatchedOnes = true, List<GamePiece> result = null)
+    public List<GamePiece> FindAllNeighboursRecursive(GamePiece gamePiece, List<GamePiece> result = null)
     {
-        List<GamePiece> clickedNeighbours = FindNeighbours(gamePiece.x, gamePiece.y, true);
+        List<GamePiece> clickedNeighbours = FindNeighbours(gamePiece.x, gamePiece.y);
 
         if (clickedNeighbours == null) return new List<GamePiece>();
 
@@ -207,38 +211,34 @@ public class Board : Singleton<Board>
 
         foreach (var piece in newPieces)
         {
-            FindAllNeighboursRecursive(piece, findMatchedOnes, result);
+            FindAllNeighboursRecursive(piece, result);
         }
 
         return result;
     }
 
-    private List<GamePiece> FindNeighbours(int x, int y, bool correctMatchValue = false)
+    private List<GamePiece> FindNeighbours(int x, int y)
     {
         List<GamePiece> neighbours = new List<GamePiece>();
         if (_gamePieces[x, y] == null) return new List<GamePiece>();
         if (IsWithinBounds(x - 1, y) && _gamePieces[x - 1, y] != null)
         {
-            if (correctMatchValue && _gamePieces[x, y].matchValue == _gamePieces[x - 1, y].matchValue) neighbours.Add(_gamePieces[x - 1, y]);
-            else if (!correctMatchValue) neighbours.Add(_gamePieces[x - 1, y]);
+            if (_gamePieces[x, y].matchValue == _gamePieces[x - 1, y].matchValue) neighbours.Add(_gamePieces[x - 1, y]);
         }
 
         if (IsWithinBounds(x + 1, y) && _gamePieces[x + 1, y] != null)
         {
-            if (correctMatchValue && _gamePieces[x, y].matchValue == _gamePieces[x + 1, y].matchValue) neighbours.Add(_gamePieces[x + 1, y]);
-            else if (!correctMatchValue) neighbours.Add(_gamePieces[x + 1, y]);
+            if (_gamePieces[x, y].matchValue == _gamePieces[x + 1, y].matchValue) neighbours.Add(_gamePieces[x + 1, y]);
         }
 
         if (IsWithinBounds(x, y - 1) && _gamePieces[x, y - 1] != null)
         {
-            if (correctMatchValue && _gamePieces[x, y].matchValue == _gamePieces[x, y - 1].matchValue) neighbours.Add(_gamePieces[x, y - 1]);
-            else if (!correctMatchValue) neighbours.Add(_gamePieces[x, y - 1]);
+            if (_gamePieces[x, y].matchValue == _gamePieces[x, y - 1].matchValue) neighbours.Add(_gamePieces[x, y - 1]);
         }
 
         if (IsWithinBounds(x, y + 1) && _gamePieces[x, y + 1] != null)
         {
-            if (correctMatchValue && _gamePieces[x, y].matchValue == _gamePieces[x, y + 1].matchValue) neighbours.Add(_gamePieces[x, y + 1]);
-            else if (!correctMatchValue) neighbours.Add(_gamePieces[x, y + 1]);
+            if (_gamePieces[x, y].matchValue == _gamePieces[x, y + 1].matchValue) neighbours.Add(_gamePieces[x, y + 1]);
         }
         return neighbours;
     }
@@ -264,9 +264,9 @@ public class Board : Singleton<Board>
         FillBoard();
     }
 
-    private void FillBoard(bool clean = false)
+    private void FillBoard(bool cleanBoard = false)
     {
-        if (clean)
+        if (cleanBoard)
         {
             foreach (var item in _gamePieces)
             {
@@ -274,8 +274,11 @@ public class Board : Singleton<Board>
                 item.GetComponent<Poolable>().ClearMe();
             }
             Array.Clear(_gamePieces, 0, _gamePieces.Length);
+            SelectColors();
         }
+
         List<Tile> fillableTiles = new List<Tile>();
+
         for (int x = 0; x < width; x++)
         {
             for (int y = 0; y < height; y++)
@@ -285,6 +288,7 @@ public class Board : Singleton<Board>
         }
 
         List<GamePiece> fillPieces = new List<GamePiece>();
+        
         foreach (var tile in fillableTiles)
         {
             fillPieces.Add(MakeFillPiece(tile.x, tile.y));
@@ -307,28 +311,24 @@ public class Board : Singleton<Board>
             gamePiece.Move(gamePiece.x, gamePiece.y, PiecesMoveSpeed);
         }, () =>
         {
-            WaitAndCheckDeadlock(true);
+            WaitAndCheckDeadlock();
         });
     }
     #endregion
-    public void UpdateGamePieceAt(int x, int y, GamePiece piece)
-    {
-        _gamePieces[x, y] = piece;
-        piece.name = "GamePiece " + "x" + x + " y" + y;
-    }
 
     #region deadlock
-    private void WaitAndCheckDeadlock(bool canPlay = false)
+    private void WaitAndCheckDeadlock()
     {
         WaitForPiecesMoveEnd(() =>
         {
             if (!CheckForDeadlock())
             {
+                _canPlay = true;
                 CheckConditions();
-                _canPlay = canPlay;
             }
             else
             {
+                _canPlay = false;
                 ReactionText.CreateText("DEADLOCKED!", Color.white, ReactionText.Directions.TopToBottom, byPassPrevious: true);
                 FillBoard(true);
             }
@@ -337,11 +337,11 @@ public class Board : Singleton<Board>
 
     private bool CheckForDeadlock()
     {
-        foreach (var item in _gamePieces)
+        foreach (var piece in _gamePieces)
         {
-            if (item == null) continue;
-            var list = FindAllNeighboursRecursive(item, false);
-            if (list.Count >= minPiecesToExplode) return false;
+            if (piece == null) continue;
+            var neighbours = FindAllNeighboursRecursive(piece);
+            if (neighbours.Count >= minPiecesToExplode) return false;
         }
         return true;
     }
