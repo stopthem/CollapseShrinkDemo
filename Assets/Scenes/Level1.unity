@@ -1383,7 +1383,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   width: 10
   height: 10
-  availableColorCount: 6
+  availableColorCount: 5
   gamePieceDefaultIcons:
   - {fileID: 21300000, guid: 1b589399a61d31a409af98e973411e65, type: 3}
   - {fileID: 21300000, guid: 2bb32355ba905254984d3d1634eaf9ad, type: 3}
@@ -1392,7 +1392,7 @@ MonoBehaviour:
   - {fileID: 21300000, guid: 4efeeae3dbb3b7741a21d56a412c37a0, type: 3}
   - {fileID: 21300000, guid: b23264283a614b844a333ccbb4e3850c, type: 3}
   tilePf: {fileID: 5116816802109604406, guid: 2c3c5bcf600448f478b02e7b1b7ab627, type: 3}
-  minPiecesToExplode: 2
+  minPiecesToExplode: 3
   piecesMoveTime: 0.5
   timeBetweenFillPieces: 0.025
   fillPieceSpawnYOffset: 10

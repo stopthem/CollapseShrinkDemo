@@ -8,8 +8,8 @@ public class Board : Singleton<Board>
 {
     private BoardConditionChecker _boardConditionChecker;
 
-    [SerializeField,Range(2,10)] private int width = 10, height = 10;
-    [SerializeField,Range(2,6)] private int availableColorCount;
+    [SerializeField, Range(2, 10)] private int width = 10, height = 10;
+    [SerializeField, Range(2, 6)] private int availableColorCount;
     private List<int> _selectedColors;
     public Sprite[] gamePieceDefaultIcons;
 
@@ -137,6 +137,7 @@ public class Board : Singleton<Board>
         var particle = PoolerHandler.ReturnPooler("StartVFXPooler").GetObject();
         GameManager.PlayParticle(particle, transform, piece.transform.position);
         piece.GetComponent<Poolable>().ClearMe();
+        piece.transform.position = new Vector2(piece.x, piece.y + 10);
     }
 
     private List<GamePiece> CollapseColumn(int column)
@@ -272,6 +273,7 @@ public class Board : Singleton<Board>
             {
                 if (item == null) continue;
                 item.GetComponent<Poolable>().ClearMe();
+                item.transform.position = new Vector2(item.x, item.y + 10);
             }
             Array.Clear(_gamePieces, 0, _gamePieces.Length);
             SelectColors();
@@ -288,7 +290,7 @@ public class Board : Singleton<Board>
         }
 
         List<GamePiece> fillPieces = new List<GamePiece>();
-        
+
         foreach (var tile in fillableTiles)
         {
             fillPieces.Add(MakeFillPiece(tile.x, tile.y));
