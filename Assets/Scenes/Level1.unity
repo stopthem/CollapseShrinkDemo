@@ -1348,6 +1348,8 @@ GameObject:
   - component: {fileID: 1457853070}
   - component: {fileID: 1457853071}
   - component: {fileID: 1457853072}
+  - component: {fileID: 1457853074}
+  - component: {fileID: 1457853073}
   m_Layer: 0
   m_Name: Board
   m_TagString: Untagged
@@ -1381,6 +1383,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3212d41b27b086f4bacc390463e67be6, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  boardConditionChecker: {fileID: 0}
+  boardNeighbourHelper: {fileID: 0}
+  boardDeadlock: {fileID: 0}
   width: 10
   height: 10
   availableColorCount: 5
@@ -1395,7 +1400,7 @@ MonoBehaviour:
   minPiecesToExplode: 3
   piecesMoveTime: 0.5
   timeBetweenFillPieces: 0.025
-  fillPieceSpawnYOffset: 10
+  fillPieceSpawnYOffset: 15
 --- !u!114 &1457853072
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1418,6 +1423,30 @@ MonoBehaviour:
   - moreThan: 7
     lessThan: 10
     spriteText: C
+--- !u!114 &1457853073
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1457853069}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d4df91d44cf07eb42b55b1df4fbcf448, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+--- !u!114 &1457853074
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1457853069}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d6a07475374f00641a2d465d39fa55bb, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1 &1460145844
 GameObject:
   m_ObjectHideFlags: 0

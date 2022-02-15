@@ -3,48 +3,57 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-public class BoardConditionChecker : MonoBehaviour
+namespace CollapseShrinkCore.Helpers
 {
-    [SerializeField] private Condition[] conditions;
-
-    public void CheckConditions(List<GamePiece> gamePieces)
+    public class BoardConditionChecker : MonoBehaviour
     {
-        List<GamePiece> alreadyVisitedPieces = new List<GamePiece>();
-        foreach (var item in gamePieces)
-        {
-            if (item == null) continue;
+        [SerializeField] private Condition[] conditions;
+        private Board _board;
 
-            var neighbours = Board.Instance.FindAllNeighboursRecursive(item);
-            if (alreadyVisitedPieces.Contains(item)) continue;
-            for (int i = conditions.Length - 1; i > -1; i--)
+        private void Awake()
+        {
+            _board = GetComponent<Board>();
+        }
+
+        public void CheckConditions(GamePiece[,] gamePieces)
+        {
+            List<GamePiece> alreadyVisitedPieces = new List<GamePiece>();
+            foreach (var item in gamePieces)
             {
-                if (MeetsCondition(conditions[i], neighbours.Count))
+                if (item == null) continue;
+
+                var neighbours = _board.boardNeighbourHelper.FindAllNeighboursRecursive(gamePieces, item);
+                if (alreadyVisitedPieces.Contains(item)) continue;
+                for (int i = conditions.Length - 1; i > -1; i--)
                 {
-                    foreach (var piece in neighbours)
+                    if (MeetsCondition(conditions[i], neighbours.Count))
                     {
-                        piece.ChangeMyIcon(Resources.Load<Sprite>("ConditionalSprites/" + Enum.GetName(typeof(MatchValue), item.matchValue) + "_" + conditions[i].spriteText));
+                        foreach (var piece in neighbours)
+                        {
+                            piece.ChangeMyIcon(Resources.Load<Sprite>("ConditionalSprites/" + Enum.GetName(typeof(MatchValue), item.matchValue) + "_" + conditions[i].spriteText));
+                        }
+                        alreadyVisitedPieces.AddRange(neighbours);
+                        break;
                     }
-                    alreadyVisitedPieces.AddRange(neighbours);
-                    break;
-                }
-                else if (i == 0)
-                {
-                    foreach (var piece in neighbours)
+                    else if (i == 0)
                     {
-                        piece.ChangeMyIcon(Board.Instance.gamePieceDefaultIcons[(int)item.matchValue]);
+                        foreach (var piece in neighbours)
+                        {
+                            piece.ChangeMyIcon(_board.gamePieceDefaultIcons[(int)item.matchValue]);
+                        }
                     }
                 }
             }
         }
-    }
 
-    private bool MeetsCondition(Condition condition, int amount) => amount > condition.moreThan && amount < condition.lessThan;
+        private bool MeetsCondition(Condition condition, int amount) => amount > condition.moreThan && amount < condition.lessThan;
 
-    [System.Serializable]
-    private class Condition
-    {
-        public int moreThan;
-        public int lessThan;
-        public string spriteText;
+        [System.Serializable]
+        private class Condition
+        {
+            public int moreThan;
+            public int lessThan;
+            public string spriteText;
+        }
     }
 }
