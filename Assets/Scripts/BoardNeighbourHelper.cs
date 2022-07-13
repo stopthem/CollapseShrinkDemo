@@ -23,20 +23,15 @@ namespace CollapseShrinkCore.Helpers
 
             if (clickedNeighbours == null) return new List<GamePiece>();
 
-            if (result == null)
-            {
-                result = new List<GamePiece>();
-            }
+            result ??= new List<GamePiece>();
+
             if (!result.Contains(gamePiece)) result.Add(gamePiece);
 
             var newPieces = new List<GamePiece>();
-            foreach (var piece in clickedNeighbours)
+            foreach (var piece in clickedNeighbours.Where(piece => !result.Contains(piece)))
             {
-                if (!result.Contains(piece))
-                {
-                    result.Add(piece);
-                    newPieces.Add(piece);
-                }
+                result.Add(piece);
+                newPieces.Add(piece);
             }
 
             foreach (var piece in newPieces)
@@ -51,12 +46,13 @@ namespace CollapseShrinkCore.Helpers
         {
             if (gamePieces[x, y] == null) return new List<GamePiece>();
 
-            List<Tuple<int, int>> potentialNeighs = new List<Tuple<int, int>>();
-
-            potentialNeighs.Add(Tuple.Create(x, y + 1));
-            potentialNeighs.Add(Tuple.Create(x, y - 1));
-            potentialNeighs.Add(Tuple.Create(x - 1, y));
-            potentialNeighs.Add(Tuple.Create(x + 1, y));
+            List<Tuple<int, int>> potentialNeighs = new List<Tuple<int, int>>
+            {
+                Tuple.Create(x, y + 1),
+                Tuple.Create(x, y - 1),
+                Tuple.Create(x - 1, y),
+                Tuple.Create(x + 1, y)
+            };
 
             return potentialNeighs.Where(neigh =>
             {

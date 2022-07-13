@@ -1,5 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
+using CanTemplate.Extensions;
+using DG.Tweening;
 using UnityEngine;
 
 namespace CollapseShrinkCore
@@ -10,8 +12,6 @@ namespace CollapseShrinkCore
         [HideInInspector] public MatchValue matchValue;
 
         [SerializeField] private GamePieceVariables _variables;
-
-        private IEnumerator _movingRoutine;
 
         private SpriteRenderer _spriteRenderer;
 
@@ -36,16 +36,14 @@ namespace CollapseShrinkCore
 
         public void ChangeMyIcon(Sprite sprite) => _spriteRenderer.sprite = sprite;
 
-        public void Move(int x, int y, float speed)
+        public void Move(int x, int y, float duration)
         {
-            if (_movingRoutine != null) LerpManager.Instance.StopCoroutine(_movingRoutine);
-            LerpManager.LerpOverTime(transform.position, new Vector2(x, y), speed, x => transform.position = x, out _movingRoutine, overrideCurve: _variables.pieceMoveCurve
-            , normalAction: () =>
-              {
-                  name = "GamePiece " + "x" + x + " y" + y;
-              });
+            transform.DOKill();
+            transform.DOMove(new Vector2(x, y), duration).SetEase(_variables.pieceMoveEase)
+                .OnComplete(() => name = "GamePiece " + "x" + x + " y" + y);
         }
     }
+
     public enum MatchValue
     {
         Yellow,

@@ -2,69 +2,70 @@
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
-using TMPro;
-using UnityEngine.EventSystems;
 using System.Linq;
+using DG.Tweening;
+using TMPro;
+using CanTemplate.Extensions;
 
-public class UIManager : Singleton<UIManager>
+public class UIManager : MonoBehaviour
 {
+    public static UIManager Instance;
+
     private List<RectTransform> childs = new List<RectTransform>();
 
-    private float confettiIteration;
+    [SerializeField] private Image fadeImage;
+    [SerializeField] private float fadeDuration;
+    [SerializeField] private EaseSelection fadeEase;
+    [Header("Menu")] [SerializeField] private GameObject menuPanel;
 
-    [SerializeField] private GameObject menuPanel;
+    [Header("GamePanel")] [SerializeField] private GameObject gamePanel;
 
-    [Header("GamePanel")]
-    [SerializeField] private GameObject gamePanel;
+    [Header("FailPanel")] [SerializeField] private GameObject failPanel;
 
-    [Header("FailPanel")]
-    [SerializeField] private GameObject failPanel;
+    [Header("SuccessPanel")] [SerializeField]
+    private GameObject successPanel;
 
-    [Header("SuccessPanel")]
-    [SerializeField] private GameObject successPanel;
     [SerializeField] private ParticleSystem confetti;
 
     private void Awake()
     {
+        Instance = this;
+
         childs = GetComponentsInChildren<RectTransform>(true).ToList();
+        childs.Remove(GetComponent<RectTransform>());
     }
 
     private void Start()
     {
-        // ShowPanel(menuPanel);
+        fadeImage.color = fadeImage.color.WithA(1);
+        HideAllPanel();
+        DoFade(false).OnComplete(() => ShowPanel(menuPanel));
+
+        GameManager.instance.onGameFailed.AddListener(Fail);
+        GameManager.instance.onGameSuccess.AddListener(Success);
     }
 
     public void StartGameButton()
     {
-        GameManager.Instance.StartGame();
+        GameManager.instance.StartGame();
         ShowPanel(gamePanel);
     }
 
-    public void RestartLevelButton()
-    {
-        GameManager.Instance.RestartLevel();
-    }
+    public void RestartLevelButton() => GameManager.instance.RestartLevel();
 
     public void NextLevelButton()
     {
-        GameManager.Instance.NextLevel();
+        GameManager.instance.NextLevel();
     }
 
-    public void Success()
+    private void Success()
     {
-        if (confettiIteration == 0)
-        {
-            confettiIteration++;
-            confetti.Play();
-        }
+        confetti.Play();
 
         ShowPanel(successPanel);
     }
 
-    public void Fail()
-    {
-        ShowPanel(failPanel);
-    }
+    private void Fail() => ShowPanel(failPanel);
 
     private void ShowPanel(GameObject panel)
     {
@@ -85,27 +86,20 @@ public class UIManager : Singleton<UIManager>
         if (updateChildsList) Instance.childs = Instance.GetComponentsInChildren<RectTransform>(true).ToList();
 
         RectTransform obj = Instance.childs.FirstOrDefault(x => x.name == name);
-        
+
         if (!obj)
         {
-            Debug.Log("ui manager coulnd't find = " + "<color=green>" + name + "</color>");
+            Debug.Log("ui manager couldn't find = " + "<color=green>" + name + "</color>");
             return;
         }
 
         obj.gameObject.SetActive(status);
     }
 
-    public static bool IsPointerOverUIObject(Transform rootTransform = null)
+    private Tween DoFade(bool fadeIn)
     {
-        PointerEventData eventDataCurrentPosition = new PointerEventData(EventSystem.current);
-        eventDataCurrentPosition.position = new Vector2(Input.mousePosition.x, Input.mousePosition.y);
-        List<RaycastResult> results = new List<RaycastResult>();
-        EventSystem.current.RaycastAll(eventDataCurrentPosition, results);
-        if (rootTransform)
-        {
-            var childList = rootTransform.GetComponentsInChildren<RectTransform>().ToList();
-            results.RemoveAll(x => !childList.Contains(x.gameObject.transform));
-        }
-        return results.Count > 0;
+        float toA = fadeIn ? 1 : 0;
+        fadeImage.color = fadeImage.color.WithA(fadeIn ? 0 : 1);
+        return fadeImage.DOColor(fadeImage.color.WithA(toA), fadeDuration).SetEase(fadeEase);
     }
 }

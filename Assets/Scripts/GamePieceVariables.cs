@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
+using DG.Tweening;
 using UnityEngine;
 
 namespace CollapseShrinkCore
@@ -7,6 +8,6 @@ namespace CollapseShrinkCore
     [CreateAssetMenu(menuName = "Game Piece Variables (Core)")]
     public class GamePieceVariables : ScriptableObject
     {
-        public AnimationCurve pieceMoveCurve;
+        public EaseSelection pieceMoveEase;
     }
 }

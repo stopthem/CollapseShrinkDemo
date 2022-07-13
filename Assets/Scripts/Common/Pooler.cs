@@ -6,14 +6,14 @@ using UnityEngine;
 public class Pooler : MonoBehaviour
 {
     [SerializeField] private Transform makeChildOf;
-    [SerializeField] private GameObject objectToPool;
+    public GameObject objectToPool;
     [SerializeField] private int spawnAtAwake;
 
     private List<Poolable> pooledObjects = new List<Poolable>();
 
     private void Awake()
     {
-        if (spawnAtAwake > 0) GetObjects(spawnAtAwake);
+        if (spawnAtAwake > 0) pooledObjects = GetObjects(spawnAtAwake).Select(x => x.GetComponent<Poolable>()).ToList();
         ClearObjects();
     }
     public List<GameObject> GetObjects(int amount, bool worldPositionStays = true, bool selectRandom = false)
@@ -48,7 +48,9 @@ public class Pooler : MonoBehaviour
             item.SetActive(true);
             Poolable itemPoolable = item.GetComponent<Poolable>();
 
-            itemPoolable.imTaken = true;
+            if (!itemPoolable) itemPoolable = item.AddComponent<Poolable>();
+
+            itemPoolable.Taken(true);
             itemPoolable.myPooler = this;
         }
 
@@ -59,15 +61,24 @@ public class Pooler : MonoBehaviour
     {
         foreach (var poolable in pooledObjects)
         {
-            poolable.imTaken = false;
+            poolable.Taken(false);
             poolable.gameObject.SetActive(false);
         }
     }
 
     public void ClearObject(Poolable poolable)
     {
-        poolable.imTaken = false;
+        if (poolable.GetComponent<RectTransform>())
+            poolable.transform.SetParent(transform);
+        else
+            poolable.transform.parent = transform;
+
+        poolable.transform.localScale = objectToPool.transform.localScale;
+        poolable.transform.rotation = objectToPool.transform.rotation;
+        poolable.transform.localPosition = Vector3.zero;
+
         poolable.gameObject.SetActive(false);
+        poolable.Taken(false);
     }
 
     public GameObject GetObject(bool worldPositionStays = true, bool selectRandom = false) => GetObjects(1, worldPositionStays, selectRandom)[0];

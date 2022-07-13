@@ -32,10 +32,12 @@ namespace CollapseShrinkCore.Helpers
                         {
                             piece.ChangeMyIcon(Resources.Load<Sprite>("ConditionalSprites/" + Enum.GetName(typeof(MatchValue), item.matchValue) + "_" + conditions[i].spriteText));
                         }
+
                         alreadyVisitedPieces.AddRange(neighbours);
                         break;
                     }
-                    else if (i == 0)
+
+                    if (i == 0)
                     {
                         foreach (var piece in neighbours)
                         {

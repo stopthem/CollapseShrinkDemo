@@ -3,7 +3,9 @@ using System.Collections.Generic;
 using UnityEngine;
 using System.Linq;
 using System;
+using CanTemplate.Utils;
 using CollapseShrinkCore.Helpers;
+using DG.Tweening;
 
 namespace CollapseShrinkCore
 {
@@ -15,6 +17,8 @@ namespace CollapseShrinkCore
 
         [Range(2, 10)] public int width = 10, height = 10;
         [SerializeField, Range(2, 6)] private int availableColorCount;
+        [SerializeField] private Pooler gamePiecePooler;
+        [SerializeField] private Pooler starVFXPooler;
         private List<int> _selectedColors;
         public Sprite[] gamePieceDefaultIcons;
 
@@ -24,9 +28,9 @@ namespace CollapseShrinkCore
         [SerializeField] private GameObject tilePf;
 
         [SerializeField, Space(10)] private int minPiecesToExplode = 2;
-        [SerializeField, Space(10)] private float piecesMoveTime = .5f;
+
+        [SerializeField, Space(10)] private float piecesMoveDuration = .5f;
         [SerializeField] private float timeBetweenFillPieces = .025f;
-        private float PiecesMoveSpeed { get => 1 / piecesMoveTime; }
 
         [SerializeField, Space(10)] private float fillPieceSpawnYOffset = 10;
 
@@ -74,7 +78,7 @@ namespace CollapseShrinkCore
 
         private GamePiece MakeFillPiece(int x, int y)
         {
-            var obj = PoolerHandler.ReturnPooler("GamePiecePooler").GetObject();
+            var obj = gamePiecePooler.GetObject();
             obj.transform.position = new Vector2(x, y + fillPieceSpawnYOffset);
             obj.name = "GamePiece " + "x" + x + " y" + y;
 
@@ -92,11 +96,10 @@ namespace CollapseShrinkCore
 
         private void CheckForInput()
         {
-            if (Input.GetMouseButtonDown(0) && _canPlay)
+            if (Input.GetMouseButtonDown(0) && _canPlay && GameManager.gameStatus == GameManager.GameStatus.Play)
             {
                 Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
-                RaycastHit hit;
-                Physics.Raycast(ray, out hit);
+                Physics.Raycast(ray, out var hit);
                 if (hit.collider) CheckForExplodable(hit.collider.GetComponent<GamePiece>());
             }
         }
@@ -113,19 +116,19 @@ namespace CollapseShrinkCore
                     Explode(piece);
                     StartCoroutine(WaitForFillBoard(CollapseColumn(piece.x)));
                 }
+
                 WaitAndCheckDeadlock();
             }
         }
 
         private void CheckConditions() => boardConditionChecker.CheckConditions(_gamePieces);
 
-        private void WaitForPiecesMoveEnd(System.Action action) => LerpManager.Wait(piecesMoveTime, () => LerpManager.WaitForFrames(1, action));
+        private void WaitForPiecesMoveEnd(System.Action action) => DOVirtual.DelayedCall(piecesMoveDuration, () => LerpManager.WaitForFrames(1, action));
 
         private void Explode(GamePiece piece)
         {
             _gamePieces[piece.x, piece.y] = null;
-            var particle = PoolerHandler.ReturnPooler("StartVFXPooler").GetObject();
-            GameManager.PlayParticle(particle, transform, piece.transform.position);
+            ParticleUtilities.PlayParticle(starVFXPooler, transform, piece.transform.position);
             ClearPiece(piece);
         }
 
@@ -141,7 +144,7 @@ namespace CollapseShrinkCore
                     {
                         if (_gamePieces[column, j] != null)
                         {
-                            _gamePieces[column, j].Move(column, i, PiecesMoveSpeed);
+                            _gamePieces[column, j].Move(column, i, piecesMoveDuration);
                             _gamePieces[column, i] = _gamePieces[column, j];
                             _gamePieces[column, i].Init(column, i);
                             if (!movingPieces.Contains(_gamePieces[column, i])) movingPieces.Add(_gamePieces[column, i]);
@@ -151,6 +154,7 @@ namespace CollapseShrinkCore
                     }
                 }
             }
+
             return movingPieces;
         }
 
@@ -161,29 +165,26 @@ namespace CollapseShrinkCore
                 if (piece != null)
                 {
                     if (Mathf.Abs(piece.transform.position.y - (float)piece.y) > 0.001f)
-                    {
                         return false;
-                    }
+
                     if (Mathf.Abs(piece.transform.position.x - (float)piece.x) > 0.001f)
-                    {
                         return false;
-                    }
                 }
             }
+
             return true;
         }
 
         #region fillboard
+
         private IEnumerator WaitForFillBoard(List<GamePiece> movingPieces)
         {
             if (movingPieces.Count == 0)
             {
-                WaitForPiecesMoveEnd(() =>
-                {
-                    FillBoard();
-                });
+                WaitForPiecesMoveEnd(() => { FillBoard(); });
                 yield break;
             }
+
             while (!IsCollapsed(movingPieces))
             {
                 yield return null;
@@ -224,16 +225,14 @@ namespace CollapseShrinkCore
         private void DelayedFill(List<GamePiece> gamePieces)
         {
             LerpManager.LoopWait(gamePieces.Count, timeBetweenFillPieces,
-            x =>
-            {
-                GamePiece gamePiece = gamePieces[x];
-                gamePiece.transform.position = new Vector2(gamePiece.x, gamePiece.y + fillPieceSpawnYOffset);
-                gamePiece.Move(gamePiece.x, gamePiece.y, PiecesMoveSpeed);
-            }, () =>
-            {
-                WaitAndCheckDeadlock();
-            });
+                (int i, bool isLast) =>
+                {
+                    GamePiece gamePiece = gamePieces[i];
+                    gamePiece.transform.position = new Vector2(gamePiece.x, gamePiece.y + fillPieceSpawnYOffset);
+                    gamePiece.Move(gamePiece.x, gamePiece.y, piecesMoveDuration);
+                }, WaitAndCheckDeadlock);
         }
+
         #endregion
 
         private void ClearBoard()
@@ -243,6 +242,7 @@ namespace CollapseShrinkCore
                 if (piece == null) continue;
                 ClearPiece(piece);
             }
+
             Array.Clear(_gamePieces, 0, _gamePieces.Length);
             SelectColors();
         }

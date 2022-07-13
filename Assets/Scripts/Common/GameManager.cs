@@ -2,97 +2,98 @@
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.SceneManagement;
+using DG.Tweening;
+using System.Linq;
+using UnityEngine.Events;
+using CanTemplate.Utils;
 
-public class GameManager : Singleton<GameManager>
+public class GameManager : MonoBehaviour
 {
-    [HideInInspector] public static GameStatus gameStatus;
-    public int levelNumber = 1;
+    public static GameManager instance;
 
-    public static System.Action<bool> OnGameStartOrEnd;
-    public static System.Action<bool> OnGameEnded;
+    [SerializeField] private int targetFps;
+    [SerializeField] private float delayBeforeGameEnd = .75f;
+    [HideInInspector] public static GameStatus gameStatus;
+
+    public UnityEvent onGameStarted, onGameSuccess, onGameFailed, onGameEnded;
+
+    public static LevelInfo currentLevelInfo;
+
+    public static int CurrentLevelCount => PlayerPrefs.GetInt("next_level", 1);
+
+    public static int maxLevel;
 
     private void Awake()
     {
-        QualitySettings.vSyncCount = 0;
-        Application.targetFrameRate = 60;
+        instance = this;
+        maxLevel = Resources.Load<GameInfo>("Game Info").maxLevel;
+
+        Application.targetFrameRate = targetFps;
+        // DOTween.SetTweensCapacity(500, 125);
+        currentLevelInfo = FileUtils.GetCurrentLevelInfo(maxLevel);
     }
 
-
-    private void Start() => gameStatus = GameStatus.MENU;
-
-    public static void Fail()
+    private void Start()
     {
-        OnGameStartOrEnd?.Invoke(false);
-        OnGameEnded?.Invoke(false);
-        gameStatus = GameStatus.FAIL;
-        UIManager.Instance.Fail();
+        gameStatus = GameStatus.Menu;
     }
 
-    public static void Success()
-    {
-        OnGameEnded?.Invoke(true);
-        OnGameStartOrEnd?.Invoke(false);
-        gameStatus = GameStatus.SUCCESS;
-        UIManager.Instance.Success();
-    }
+    /// <param name="delay">If 0, GameManager's <see cref="delayBeforeGameEnd"/> will be used.</param>
+    public static void Fail(float delay = 0) => GameEnded(GameStatus.Fail, instance.onGameFailed, delay);
 
-    public void NextLevel()
+    private static void GameEnded(GameStatus toStatus, UnityEvent eventToInvoke, float delay = 0)
     {
-        int nextLevelNum = levelNumber + 1;
+        if (gameStatus == toStatus) return;
 
-        if (nextLevelNum == 2)
+        DOVirtual.DelayedCall(delay, () =>
         {
-            nextLevelNum = 1;
-        }
+            CalculateAndSetNextLevel();
 
-        SceneManager.LoadScene("Level" + nextLevelNum);
+            instance.onGameSuccess.Invoke();
+            eventToInvoke.Invoke();
+
+            gameStatus = toStatus;
+        });
     }
+
+    /// <param name="delay">If 0, GameManager's <see cref="delayBeforeGameEnd"/> will be used.</param>
+    public static void Success(float delay = 0) => GameEnded(GameStatus.Success, instance.onGameSuccess, delay);
+
+    private static void CalculateAndSetNextLevel()
+    {
+        var nextLevelScFoo = GetLevelScNumber();
+        PlayerPrefs.SetInt("next_levelSc", nextLevelScFoo);
+
+        PlayerPrefs.SetInt("next_level", PlayerPrefs.GetInt("next_level", 1) + 1);
+    }
+
+    public static int GetLevelScNumber()
+    {
+        var nextLevelSc = PlayerPrefs.GetInt("next_levelSc", 1);
+        var nextLevelScFoo = nextLevelSc + 1;
+        if (nextLevelSc > maxLevel)
+            nextLevelScFoo = 1;
+        return nextLevelScFoo;
+    }
+
+    public void NextLevel() => SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
 
     public void RestartLevel() => SceneManager.LoadScene(SceneManager.GetActiveScene().name);
 
     public void StartGame()
     {
         Time.timeScale = 1;
-        gameStatus = GameStatus.PLAY;
-        OnGameStartOrEnd?.Invoke(true);
+        gameStatus = GameStatus.Play;
+        onGameStarted?.Invoke();
     }
 
-    public static void PlayParticle(GameObject expObj, Transform objTransform, Vector3 pos = default(Vector3), Vector3 scale = default(Vector3), bool doParent = false)
-    {
-        pos = pos == default(Vector3) ? objTransform.position : pos;
-        scale = scale == default(Vector3) ? expObj.transform.localScale : scale;
-
-        if (doParent) expObj.transform.parent = objTransform;
-
-        Vector3 startScale = expObj.transform.localScale;
-        var particle = expObj.GetComponent<ParticleSystem>();
-        expObj.transform.position = pos;
-        if (scale != Vector3.zero)
-        {
-            expObj.transform.localScale = scale;
-        }
-        particle.Play();
-        var main = particle.main;
-        LerpManager.Wait(main.duration, () =>
-        {
-            particle.Stop();
-            if (expObj.GetComponent<Poolable>())
-            {
-                expObj.GetComponent<Poolable>().ClearMe();
-                expObj.transform.localScale = startScale;
-            }
-            else
-            {
-                Destroy(expObj);
-            }
-        });
-    }
+    private void OnDestroy() => DOTween.KillAll();
 
     public enum GameStatus
     {
-        MENU,
-        PLAY,
-        FAIL,
-        SUCCESS,
+        Menu,
+        Play,
+        Fail,
+        Success,
     }
 }

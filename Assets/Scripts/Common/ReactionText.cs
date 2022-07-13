@@ -2,6 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using TMPro;
+using DG.Tweening;
 
 public class ReactionText : Singleton<ReactionText>
 {
@@ -23,7 +24,7 @@ public class ReactionText : Singleton<ReactionText>
 
     [SerializeField] private float topToBottomSpeed = 2.5f, xSpeed = 1;
 
-    [SerializeField] private AnimationCurve classicCurve;
+    [SerializeField] private Ease topToBottomEase = Ease.OutBack;
     [SerializeField] private AnimationCurve xCurve;
 
     private const float _startFontSize = 150;
@@ -38,13 +39,13 @@ public class ReactionText : Singleton<ReactionText>
     }
 
     public static void CreateText(string _text, Color color, Directions direciton,
-     float speed = 0, bool byPassPrevious = false, FontStyles fontStyle = default(FontStyles), float fontSize = _startFontSize, float outlineThickness = 0, System.Action action = null)
+     float duration = 0, bool byPassPrevious = false, FontStyles fontStyle = default(FontStyles), float fontSize = _startFontSize, float outlineThickness = 0, System.Action action = null)
     {
-        if (speed == 0) speed = direciton == Directions.TopToBottom ? Instance.topToBottomSpeed : Instance.xSpeed;
-        Instance.StartCoroutine(Instance.TextWaitRoutine(_text, color, direciton, speed, byPassPrevious, fontStyle, fontSize, outlineThickness, action));
+        if (duration == 0) duration = direciton == Directions.TopToBottom ? Instance.topToBottomSpeed : Instance.xSpeed;
+        Instance.StartCoroutine(Instance.TextWaitRoutine(_text, color, direciton, duration, byPassPrevious, fontStyle, fontSize, outlineThickness, action));
     }
 
-    private IEnumerator TextWaitRoutine(string _text, Color color, Directions direciton, float speed, bool byPassPrevious, FontStyles fontStyle, float fontSize, float outlineThickness, System.Action action = null)
+    private IEnumerator TextWaitRoutine(string _text, Color color, Directions direction, float duration, bool byPassPrevious, FontStyles fontStyle, float fontSize, float outlineThickness, System.Action action = null)
     {
         while (flag)
         {
@@ -61,85 +62,46 @@ public class ReactionText : Singleton<ReactionText>
         text.fontSize = fontSize;
         text.fontStyle = fontStyle;
         text.fontSharedMaterial.SetFloat("_OutlineWidth", outlineThickness);
-        Vector2 startPos;
         Vector2 finalPos;
-        AnimationCurve curve = xCurve;
 
-        if (direciton == Directions.TopToBottom)
+        switch (direction)
         {
-            curve = classicCurve;
-            startPos = topToBottomStartPos;
-            finalPos = topToBottomFinishPos;
+            case Directions.TopToBottom:
+                rectTransform.anchoredPosition = topToBottomStartPos;
+                finalPos = topToBottomFinishPos;
+                break;
+            case Directions.RightToLeft:
+                rectTransform.anchoredPosition = rightToLeftStartPos;
+                finalPos = rightToLeftFinishPos;
+                break;
+            default:
+                rectTransform.anchoredPosition = leftToRightStartPos;
+                finalPos = leftToRightFinishPos;
+                break;
         }
-        else if (direciton == Directions.RightToLeft)
-        {
-            startPos = rightToLeftStartPos;
-            finalPos = rightToLeftFinishPos;
-        }
+
+        flag = true;
+
+        if (direction == Directions.TopToBottom)
+            rectTransform.DOAnchorPos(finalPos, duration / 2).SetEase(topToBottomEase).OnComplete(() =>
+             {
+                 if (!nextTextInc)
+                 {
+                     var toColor = text.color;
+                     toColor.a = 0;
+                     text.DOColor(toColor, duration / 2).OnComplete(() => TweenEnded(action));
+                 }
+                 else
+                     TweenEnded(action);
+             }).SetUpdate(true);
         else
-        {
-            startPos = leftToRightStartPos;
-            finalPos = leftToRightFinishPos;
-        }
-
-        StartCoroutine(Move(startPos, finalPos, curve, speed, action));
+            rectTransform.DOAnchorPos(finalPos, duration).SetEase(xCurve).OnComplete(() => TweenEnded(action)).SetUpdate(true);
     }
 
-    private IEnumerator Move(Vector2 startPos, Vector2 finalPos, AnimationCurve curve, float speed, System.Action action = null)
+    private void TweenEnded(System.Action action)
     {
-        flag = true;
-        rectTransform.anchoredPosition = startPos;
-
-        var timer = 0f;
-        while (timer < 1)
-        {
-            if (nextTextInc)
-            {
-                nextTextInc = false;
-                break;
-            }
-            timer += Time.deltaTime * speed;
-            rectTransform.anchoredPosition = Vector2.Lerp(startPos, finalPos, curve.Evaluate(timer));
-            yield return null;
-        }
-
-
-        if (startPos == topToBottomStartPos && !nextTextInc)
-        {
-            timer = 0f;
-            while (timer < 1)
-            {
-                if (nextTextInc)
-                {
-                    nextTextInc = false;
-                    break;
-                }
-
-                timer += Time.deltaTime * speed;
-                var color = text.color;
-                color.a = Mathf.Lerp(1, 0, timer);
-                text.color = color;
-                yield return null;
-            }
-        }
-
-        if (action != null)
-        {
-            action.Invoke();
-        }
-
+        action?.Invoke();
         flag = false;
         text.text = "";
-    }
-
-    private Vector2 SmoothVector2Lerp(Vector2 begin, Vector2 end, float t)
-    {
-        var startYvalue = begin.y;
-        var endYValue = end.y;
-        var startXValue = begin.x;
-        var endXValue = end.x;
-        var currentYValue = Mathf.SmoothStep(startYvalue, endYValue, t);
-        var currentXValue = Mathf.SmoothStep(startXValue, endXValue, t);
-        return new Vector2(currentXValue, currentYValue);
     }
 }
