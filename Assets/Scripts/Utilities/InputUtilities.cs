@@ -1,36 +1,38 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using DG.Tweening;
 using UnityEngine;
+using UnityEngine.InputSystem;
+using Touch = UnityEngine.InputSystem.EnhancedTouch.Touch;
 
-namespace CanTemplate.Utils
+namespace CanTemplate.Utilities
 {
     public static class InputUtilities
     {
-        ///<summary>Tries to detect a click without dragging between mousebuttondown and mousebuttonup.</summary>
-        ///<param name="checkAfterElapsed">Waits this amount of time after first click or when this function has been called to return a conculusion.</param>
-        public static void ClickWithoutDrag(System.Action onFinished, float waitTime = .125f, float checkAfterElapsed = .75f, bool requireInput = true)
+        ///<summary>Creates a primaryTouch tap and checks it until the returned inputAction is disabled.</summary>
+        public static InputAction Tap(System.Action<InputAction.CallbackContext> onSuccessfulClick, bool disableOnLevelEnd = true)
         {
-            if (Input.GetMouseButtonDown(0) && requireInput)
-                StartClickWithoutDrag(onFinished, waitTime, checkAfterElapsed);
-            else if (!requireInput)
-                StartClickWithoutDrag(onFinished, waitTime, checkAfterElapsed);
+            var tapAction = new InputAction(binding: "<Touchscreen>/primaryTouch/tap");
+            tapAction.Enable();
+            tapAction.performed += onSuccessfulClick.Invoke;
+
+            GameManager.instance.onGameEnded.AddListener(() => tapAction.Disable());
+
+            return tapAction;
         }
 
-        private static void StartClickWithoutDrag(Action onFinished, float waitTime, float checkAfterElapsed)
+        public static bool TryGetSingleTouch(out Touch touch)
         {
-            var waitTween = DOVirtual.DelayedCall(waitTime, () => { });
-
-            waitTween.OnUpdate(() =>
+            if (Touch.activeTouches.Count == 1)
             {
-                if (Input.GetMouseButtonUp(0))
-                {
-                    onFinished.Invoke();
-                    waitTween.Kill();
-                }
-                else if (Input.GetMouseButton(0) && waitTween.ElapsedPercentage() > checkAfterElapsed) waitTween.Kill();
-            });
+                touch = Touch.activeTouches.First();
+                return true;
+            }
+
+            touch = new Touch();
+            return false;
         }
     }
 }

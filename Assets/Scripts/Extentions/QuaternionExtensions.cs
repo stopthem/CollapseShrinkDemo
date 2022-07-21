@@ -6,11 +6,11 @@ namespace CanTemplate.Extensions
 {
     public static class QuaternionExtensions
     {
-        ///<summary>Clamps euler angles of target quartenion between -180,180.</summary>
-        ///<param name ="setEuler">Sets returned euler angles to target quartenion's euler angles.</param>
+        ///<summary>Clamps and returns euler angles of target quaternion between -180,180.</summary>
+        ///<param name ="setEuler">Sets returned euler angles to target quaternion's euler angles.</param>
         public static Vector3 ClampEuler(this Quaternion rot, bool setEuler = false)
         {
-            Vector3 rotEuler = rot.eulerAngles;
+            var rotEuler = rot.eulerAngles;
             rotEuler.y = rotEuler.y > 180 ? rotEuler.y - 360 : rotEuler.y;
             rotEuler.x = rotEuler.x > 180 ? rotEuler.x - 360 : rotEuler.x;
             rotEuler.z = rotEuler.z > 180 ? rotEuler.z - 360 : rotEuler.z;

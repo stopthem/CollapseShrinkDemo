@@ -12,9 +12,6 @@ public class RendererHandle : MonoBehaviour
 
     private void LateUpdate()
     {
-        if (myRenderer.IsVisibleFrom(Camera.main))
-            myRenderer.enabled = true;
-        else
-            myRenderer.enabled = false;
+        myRenderer.enabled = myRenderer.IsVisibleFrom(Camera.main);
     }
 }

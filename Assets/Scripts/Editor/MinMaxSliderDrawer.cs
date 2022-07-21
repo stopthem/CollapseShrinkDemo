@@ -3,6 +3,8 @@
 using UnityEngine;
 using UnityEditor;
 
+#if UNITY_EDITOR
+
 [CustomPropertyDrawer(typeof(MinMaxSliderAttribute))]
 internal class MinMaxSliderDrawer : PropertyDrawer
 {
@@ -54,18 +56,19 @@ internal class MinMaxSliderDrawer : PropertyDrawer
         switch (property.propertyType)
         {
             case SerializedPropertyType.Float:
+            {
+                if (round)
                 {
-                    if (round)
-                    {
-                        v = Round(v, kRoundingValue);
-                    }
-                    property.floatValue = v;
+                    v = Round(v, kRoundingValue);
                 }
+
+                property.floatValue = v;
+            }
                 break;
             case SerializedPropertyType.Integer:
-                {
-                    property.intValue = Mathf.RoundToInt(v);
-                }
+            {
+                property.intValue = Mathf.RoundToInt(v);
+            }
                 break;
             default:
                 break;
@@ -81,18 +84,18 @@ internal class MinMaxSliderDrawer : PropertyDrawer
         switch (property.propertyType)
         {
             case SerializedPropertyType.Vector2:
-                {
-                    var v = property.vector2Value;
-                    min = v.x;
-                    max = v.y;
-                }
+            {
+                var v = property.vector2Value;
+                min = v.x;
+                max = v.y;
+            }
                 break;
             case SerializedPropertyType.Vector2Int:
-                {
-                    var v = property.vector2IntValue;
-                    min = v.x;
-                    max = v.y;
-                }
+            {
+                var v = property.vector2IntValue;
+                min = v.x;
+                max = v.y;
+            }
                 break;
             default:
                 EditorGUI.LabelField(position, label, unsupported);
@@ -103,9 +106,7 @@ internal class MinMaxSliderDrawer : PropertyDrawer
 
         float ppp = EditorGUIUtility.pixelsPerPoint;
         float spacing = kSpacing * ppp;
-        float fieldWidth = ppp * (attr.DataFields && attr.FlexibleFields ?
-            FlexibleFloatFieldWidth(attr.Min, attr.Max) :
-            kFloatFieldWidth) * 1.75f;
+        float fieldWidth = ppp * (attr.dataFields && attr.flexibleFields ? FlexibleFloatFieldWidth(attr.min, attr.max) : kFloatFieldWidth) * attr.floatFieldWidthMultiplier;
 
         var indent = EditorGUI.indentLevel;
 
@@ -114,7 +115,7 @@ internal class MinMaxSliderDrawer : PropertyDrawer
 
         Rect sliderPos = r;
 
-        if (attr.DataFields)
+        if (attr.dataFields)
         {
             sliderPos.x += fieldWidth + spacing;
             sliderPos.width -= (fieldWidth + spacing) * 2;
@@ -124,33 +125,34 @@ internal class MinMaxSliderDrawer : PropertyDrawer
             sliderPos.Contains(Event.current.mousePosition))
         {
             pressed = true;
-            min = Mathf.Clamp(min, attr.Min, attr.Max);
-            max = Mathf.Clamp(max, attr.Min, attr.Max);
+            min = Mathf.Clamp(min, attr.min, attr.max);
+            max = Mathf.Clamp(max, attr.min, attr.max);
             pressedMin = min;
             pressedMax = max;
-            SetVectorValue(property, ref min, ref max, attr.Round);
+            SetVectorValue(property, ref min, ref max, attr.round);
             GUIUtility.keyboardControl = 0; // TODO keep focus but stop editing
         }
 
         if (pressed && Event.current.type == EventType.MouseUp)
         {
-            if (attr.Round)
+            if (attr.round)
             {
                 SetVectorValue(property, ref min, ref max, true);
             }
+
             pressed = false;
         }
 
         EditorGUI.BeginChangeCheck();
         EditorGUI.indentLevel = 0;
-        EditorGUI.MinMaxSlider(sliderPos, ref min, ref max, attr.Min, attr.Max);
+        EditorGUI.MinMaxSlider(sliderPos, ref min, ref max, attr.min, attr.max);
         EditorGUI.indentLevel = indent;
         if (EditorGUI.EndChangeCheck())
         {
             SetVectorValue(property, ref min, ref max, false);
         }
 
-        if (attr.DataFields)
+        if (attr.dataFields)
         {
             Rect minPos = r;
             minPos.width = fieldWidth;
@@ -163,13 +165,15 @@ internal class MinMaxSliderDrawer : PropertyDrawer
             EditorGUI.indentLevel = indent;
             if (EditorGUI.EndChangeCheck())
             {
-                if (attr.Bound)
+                if (attr.bound)
                 {
-                    min = Mathf.Max(min, attr.Min);
+                    min = Mathf.Max(min, attr.min);
                     min = Mathf.Min(min, max);
                 }
-                SetVectorValue(property, ref min, ref max, attr.Round);
+
+                SetVectorValue(property, ref min, ref max, attr.round);
             }
+
             vectorMinProp.Dispose();
 
             Rect maxPos = position;
@@ -184,13 +188,15 @@ internal class MinMaxSliderDrawer : PropertyDrawer
             EditorGUI.indentLevel = indent;
             if (EditorGUI.EndChangeCheck())
             {
-                if (attr.Bound)
+                if (attr.bound)
                 {
-                    max = Mathf.Min(max, attr.Max);
+                    max = Mathf.Min(max, attr.max);
                     max = Mathf.Max(max, min);
                 }
-                SetVectorValue(property, ref min, ref max, attr.Round);
+
+                SetVectorValue(property, ref min, ref max, attr.round);
             }
+
             vectorMaxProp.Dispose();
 
             EditorGUI.showMixedValue = false;
@@ -199,3 +205,4 @@ internal class MinMaxSliderDrawer : PropertyDrawer
         EditorGUI.EndProperty();
     }
 }
+#endif

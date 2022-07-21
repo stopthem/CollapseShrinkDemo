@@ -14,41 +14,33 @@ namespace CanTemplate.Extensions
         public static int GetBlendShapeIndexByName(this SkinnedMeshRenderer skinnedMeshRenderer, string name)
         {
             Mesh m = skinnedMeshRenderer.sharedMesh;
-            string[] arr;
-            arr = new string[m.blendShapeCount];
-            for (int i = 0; i < m.blendShapeCount; i++)
-            {
-                string s = m.GetBlendShapeName(i);
-                arr[i] = s;
-            }
-            string keyName = arr.FirstOrDefault(x => x == name);
-            return arr.ToList().IndexOf(keyName);
+            return m.GetBlendShapeIndex(name);
         }
 
-        public static void CopySkinnedMesh(this SkinnedMeshRenderer thisMesh, SkinnedMeshRenderer otherMesh, bool copyBlendShapes = true)
+        ///<summary>Copies given skinned mesh renderer to target.</summary>
+        public static void CopySkinnedMesh(this SkinnedMeshRenderer thisMesh, SkinnedMeshRenderer otherMesh, bool copyBlendShapes = true, bool copyRootBone = true)
         {
             thisMesh.sharedMesh = otherMesh.sharedMesh;
-            thisMesh.rootBone = otherMesh.rootBone;
+            if (copyRootBone) thisMesh.rootBone = otherMesh.rootBone;
             thisMesh.localBounds = new Bounds(otherMesh.bounds.center, otherMesh.bounds.size);
             thisMesh.bones = otherMesh.bones;
 
-            if (copyBlendShapes)
+            if (!copyBlendShapes) return;
+            
+            for (int i = 0; i < otherMesh.sharedMesh.blendShapeCount; i++)
             {
-                for (int i = 0; i < otherMesh.sharedMesh.blendShapeCount; i++)
-                {
-                    if (i == thisMesh.sharedMesh.blendShapeCount) break;
-                    thisMesh.SetBlendShapeWeight(i, otherMesh.GetBlendShapeWeight(i));
-                }
+                if (i == thisMesh.sharedMesh.blendShapeCount) break;
+                thisMesh.SetBlendShapeWeight(i, otherMesh.GetBlendShapeWeight(i));
             }
         }
 
         public static void SetBlendShapeWeight(this SkinnedMeshRenderer renderer, string keyName, float value)
         {
-            int index = renderer.GetBlendShapeIndexByName(keyName);
+            var index = renderer.GetBlendShapeIndexByName(keyName);
             if (index != -1) renderer.SetBlendShapeWeight(index, value);
         }
 
         public static float GetBlendShapeWeight(this SkinnedMeshRenderer renderer, string keyName)
-        => renderer.GetBlendShapeWeight(renderer.GetBlendShapeIndexByName(keyName));
+            => renderer.GetBlendShapeWeight(renderer.GetBlendShapeIndexByName(keyName));
     }
 }

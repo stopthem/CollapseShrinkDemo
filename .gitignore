@@ -42,11 +42,11 @@ sysinfo.txt
 *.aab
 
 # General
-*.mp4
 *.rar
 *.unitypackage
 *.zip
+Recordings/
+Builds/
 
 # Crashlytics generated file
 crashlytics-build.properties
-.vscode/launch.json

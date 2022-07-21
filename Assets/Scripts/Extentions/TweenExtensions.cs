@@ -3,37 +3,56 @@ using System.Collections.Generic;
 using UnityEngine;
 using DG.Tweening;
 using System;
+using System.Linq;
+using CanTemplate.Utilities;
 
 namespace CanTemplate.Extensions
 {
     public static class TweenExtensions
     {
-        ///<summary>Moves and rotates target transform to given transform in world space.</summary>
-        public static Sequence DoMoveRotate(this Transform t, Transform to, float duration, EaseSelection ease = null)
+        ///<summary>Moves and rotates target transform to given transform in world space.
+        /// <para>Also sets the returned sequences target to given transform for filtering operations.</para>
+        /// </summary>
+        public static Sequence DoMoveRotate(this Transform t, Transform to, float duration, Ease ease = Ease.OutQuad)
         {
-            EaseSelection tweenEase = ease == null ? new EaseSelection(Ease.InOutQuad) : ease;
-
-            Vector3 toPos = to.position;
-            Vector3 toRotation = to.rotation.ClampEuler();
-            Sequence seq = DOTween.Sequence();
-            seq.SetTarget(t);
-            return seq
-            .Append(t.DOMove(toPos, duration).SetEase(tweenEase))
-            .Join(t.DORotate(toRotation, duration).SetEase(tweenEase));
+            var toPos = to.position;
+            var toRotation = to.rotation.ClampEuler();
+            return DOTween.Sequence()
+                          .SetTarget(t)
+                          .Append(t.DOMove(toPos, duration)
+                                   .SetEase(ease))
+                          .Join(t.DORotate(toRotation, duration)
+                                 .SetEase(ease));
         }
 
-        ///<summary>Moves and rotates target transform to given transform in local space.</summary>
-        public static Sequence DoLocalMoveRotate(this Transform t, Transform to, float duration, EaseSelection ease = null)
+        ///<summary>Moves and rotates target transform to given transform in local space.
+        /// <para>Also sets the returned sequences target to given transform for filtering operations.</para>
+        /// </summary>
+        public static Sequence DoLocalMoveRotate(this Transform t, Transform to, float duration, Ease ease = Ease.OutQuad)
         {
-            EaseSelection tweenEase = ease == null ? new EaseSelection(Ease.InOutQuad) : ease;
+            var toPos = to.localPosition;
+            var toRotation = to.localRotation.ClampEuler();
+            return DOTween.Sequence()
+                          .SetTarget(t)
+                          .Append(t.DOLocalMove(toPos, duration)
+                                   .SetEase(ease))
+                          .Join(t.DOLocalRotate(toRotation, duration)
+                                 .SetEase(ease));
+        }
 
-            Vector3 toPos = to.localPosition;
-            Vector3 toRotation = to.localRotation.ClampEuler();
-            Sequence seq = DOTween.Sequence();
-            seq.SetTarget(t);
-            return seq
-            .Append(t.DOLocalMove(toPos, duration).SetEase(tweenEase))
-            .Join(t.DOLocalRotate(toRotation, duration).SetEase(tweenEase));
+        ///<summary>Sets given loopType with amount of <see langword ="loopAmount"/> and given <see langword ="delayBetweenLoops"/> between loops to target tween and returns a Sequence.
+        ///<para>Also sets the returned sequences target to given transform for filtering operations.</para>
+        /// </summary>
+        public static Sequence SetLoopsWithDelay(this Tween t, float delayBetweenLoops, int loopAmount = 2, LoopType loopType = LoopType.Yoyo, bool delayAtStart = false)
+        {
+            var seq = DOTween.Sequence();
+            if (delayAtStart) seq.AppendInterval(delayBetweenLoops);
+
+            seq.Append(t)
+               .AppendInterval(delayBetweenLoops)
+               .SetLoops(loopAmount, loopType)
+               .SetTarget(t.target);
+            return seq;
         }
 
         public static Tween SetEase(this Tween t, EaseSelection easeSelection)
@@ -48,14 +67,35 @@ namespace CanTemplate.Extensions
             return t;
         }
 
-        ///<summary>Generates a tween callback at a given normalized time.</summary> 
-        ///<param name = "time">Input a normalized time(0-1) between 0 and tween duration.</param>
-        ///<param name = "includeLoops">Should DOTween calculate duration based on all loops(default) or just one loop.</param>
-        public static Tween CallbackAtTime(this Tween t, float time, TweenCallback callback, bool includeLoops = true)
+        ///<summary>Fires the given callback at a given normalized ( 0-1(tween duration) ) <see langword="time"/>
+        ///<para>Be aware that time is manipulated by Ease of this tween. Example = If you have DOTween.To from 0 to 100 with Ease of OutSine(default), time of a .5f will be around 70</para>
+        /// </summary> 
+        ///<param name = "time">Give a normalized time(0-1) between 0 and tween duration.</param>
+        /// <param name="ignoreTimeScale">Should DOTween ignore Time.Timescale when waiting ?</param>
+        public static Tween CallbackAtTime(this Tween t, float time, TweenCallback callback, bool includeLoops = true, bool ignoreTimeScale = false)
         {
-            time = Mathf.Clamp01(time);
-            DOVirtual.DelayedCall(t.Duration(includeLoops) * time, callback);
+            var callBackTween = DOVirtual.DelayedCall(t.Duration(includeLoops) * time, callback, ignoreTimeScale);
+            t.OnKill(() => callBackTween.Kill());
+
             return t;
         }
+
+        ///<summary>Fires the given callback at a given normalized ( 0-1(tween duration) ) <see langword="time"/>
+        ///<para>Be aware that time is manipulated by Ease of this tween. Example = If you have DOTween.To from 0 to 100 with Ease of OutSine(default), time of a .5f will be around 70</para>
+        /// </summary> 
+        ///<param name = "time">Give a normalized time(0-1) between 0 and tween duration.</param>
+        /// <param name="ignoreTimeScale">Should DOTween ignore Time.Timescale when waiting ?</param>
+        public static Tween CallbackAtTimeSpeedBased(this Tween t, float time, TweenCallback callback, bool includeLoops = true, bool ignoreTimeScale = false)
+        {
+            WaitUtilities.WaitForAFrame(() =>
+            {
+                var callBackTween = DOVirtual.DelayedCall(t.Duration(includeLoops) * time, callback, ignoreTimeScale);
+                t.OnKill(() => callBackTween.Kill());
+            });
+
+            return t;
+        }
+        
+        public static bool IsActiveNPlaying(this Tween t) => t.IsActive() && t.IsPlaying();
     }
 }

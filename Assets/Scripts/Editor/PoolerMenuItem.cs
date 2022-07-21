@@ -10,7 +10,7 @@ public class PoolerMenuItem : MonoBehaviour
     [MenuItem("GameObject/CanTemplate/Pooler", false, 10)]
     static void CreateCustomGameObject(MenuCommand menuCommand)
     {
-        GameObject go = new GameObject("Pooler");
+        var go = new GameObject("Pooler");
         GameObjectUtility.SetParentAndAlign(go, menuCommand.context as GameObject);
         go.AddComponent<Pooler>();
         Undo.RegisterCreatedObjectUndo(go, "Create " + go.name);

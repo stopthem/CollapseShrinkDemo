@@ -6,20 +6,22 @@ using UnityEngine;
 [AttributeUsage(AttributeTargets.Field, Inherited = true, AllowMultiple = false)]
 public class MinMaxSliderAttribute : PropertyAttribute
 {
-    public float Min { get; set; }
-    public float Max { get; set; }
-    public bool DataFields { get; set; } = true;
-    public bool FlexibleFields { get; set; } = true;
-    public bool Bound { get; set; } = true;
-    public bool Round { get; set; } = true;
+    public readonly float min;
+    public readonly float max;
+    public readonly float floatFieldWidthMultiplier;
+    public readonly bool dataFields = true;
+    public readonly bool flexibleFields = true;
+    public readonly bool bound = true;
+    public readonly bool round = true;
 
     public MinMaxSliderAttribute() : this(0, 1)
     {
     }
 
-    public MinMaxSliderAttribute(float min, float max)
+    public MinMaxSliderAttribute(float min, float max, float fieldWidthMultiplier = 1.75f)
     {
-        Min = min;
-        Max = max;
+        this.min = min;
+        this.max = max;
+        floatFieldWidthMultiplier = fieldWidthMultiplier;
     }
 }
