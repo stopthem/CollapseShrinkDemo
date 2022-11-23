@@ -1,9 +1,8 @@
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using CanTemplate.Utilities;
-using DG.DeInspektor.Attributes;
+using NaughtyAttributes;
 using UnityEditor;
 using UnityEngine;
 
@@ -11,11 +10,12 @@ public class HumanoidRagdollHandler : MonoBehaviour
 {
     public bool getBonesByName = true;
 
-    [HideInInspector] public Transform pelvis;
+    [ShowIf("getBonesByName"), Required("Pelvis cannot be empty")]
+    public Transform pelvis;
 
-    [HideInInspector] public List<Transform> bones = new();
+    [ShowIf("getBonesByName")] public string bonesContainsName;
 
-    [HideInInspector] public string bonesContainsName;
+    [HideIf("getBonesByName")] public List<Transform> bones = new();
 
     private Animator _animator;
 
@@ -33,11 +33,17 @@ public class HumanoidRagdollHandler : MonoBehaviour
         {
             _ragdollActiveness = value;
 
-            foreach (var item in RagdollInfos.Item1)
+            foreach (var boneRigidbody in RagdollInfos.Item1)
             {
-                item.collisionDetectionMode = value ? CollisionDetectionMode.Discrete : CollisionDetectionMode.ContinuousSpeculative;
+                boneRigidbody.collisionDetectionMode = value ? CollisionDetectionMode.Discrete : CollisionDetectionMode.ContinuousSpeculative;
 
-                item.isKinematic = !value;
+                boneRigidbody.isKinematic = !value;
+                boneRigidbody.useGravity = value;
+            }
+
+            foreach (var boneCollider in RagdollInfos.Item2)
+            {
+                boneCollider.isTrigger = !value;
             }
 
             _animator.enabled = !value;
@@ -81,29 +87,12 @@ public class HumanoidRagdollHandler : MonoBehaviour
     public void OpenCloseRagdoll(bool status) => RagdollActiveness = status;
 
     public Rigidbody GetClosestRigidBody(Vector3 pos) => RagdollInfos.Item1.OrderBy(x => Vector3.Distance(pos, x.position)).First();
-}
 
-#if UNITY_EDITOR
-[CustomEditor(typeof(HumanoidRagdollHandler)), CanEditMultipleObjects]
-public class HumanoidRagdollHandlerEditor : Editor
-{
-    public override void OnInspectorGUI()
+    public void ImproveStability()
     {
-        DrawDefaultInspector();
-
-        var humanoidRagdollHandler = target as HumanoidRagdollHandler;
-
-        if (humanoidRagdollHandler!.getBonesByName)
+        foreach (var chJoint in RagdollInfos.Item3)
         {
-            humanoidRagdollHandler.pelvis = (Transform)EditorGUILayout.ObjectField("Pelvis", humanoidRagdollHandler.pelvis, typeof(Transform), true);
-            humanoidRagdollHandler.bonesContainsName = EditorGUILayout.TextField("Bones Contains Name", "mixamorig");
-        }
-        else EditorGUILayout.PropertyField(serializedObject.FindProperty(nameof(humanoidRagdollHandler.bones)), new GUIContent("Bones"));
-
-        if (GUI.changed)
-        {
-            EditorUtility.SetDirty(target);
+            chJoint.enableProjection = true;
         }
     }
 }
-#endif

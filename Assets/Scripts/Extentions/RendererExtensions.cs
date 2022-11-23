@@ -1,19 +1,22 @@
 using System.Linq;
+using CanTemplate.Camera;
 using UnityEngine;
 
 namespace CanTemplate.Extensions
 {
     public static class RendererExtensions
     {
-        public static bool IsVisibleFrom(this Renderer renderer, Camera camera)
+        public static bool IsVisibleFrom(this Bounds bounds, UnityEngine.Camera camera = null)
         {
-            Plane[] planes = GeometryUtility.CalculateFrustumPlanes(camera);
-            return GeometryUtility.TestPlanesAABB(planes, renderer.bounds);
+            var cam = camera ? camera : CinemachineManager.MainCam;
+
+            var planes = GeometryUtility.CalculateFrustumPlanes(cam);
+            return GeometryUtility.TestPlanesAABB(planes, bounds);
         }
 
         public static int GetBlendShapeIndexByName(this SkinnedMeshRenderer skinnedMeshRenderer, string name)
         {
-            Mesh m = skinnedMeshRenderer.sharedMesh;
+            var m = skinnedMeshRenderer.sharedMesh;
             return m.GetBlendShapeIndex(name);
         }
 
@@ -26,7 +29,7 @@ namespace CanTemplate.Extensions
             thisMesh.bones = otherMesh.bones;
 
             if (!copyBlendShapes) return;
-            
+
             for (int i = 0; i < otherMesh.sharedMesh.blendShapeCount; i++)
             {
                 if (i == thisMesh.sharedMesh.blendShapeCount) break;

@@ -1,9 +1,9 @@
 using System.Collections.Generic;
 using System.Linq;
+using CanTemplate.Input;
+using CanTemplate.UI;
 using UnityEngine;
 using UnityEngine.EventSystems;
-using DG.Tweening;
-using UnityEngine.InputSystem;
 
 namespace CanTemplate.Utilities
 {
@@ -13,9 +13,9 @@ namespace CanTemplate.Utilities
         public static bool IsPointerOverUIObject(Transform rootTransform = null)
         {
             var uiObjs = GetUIObjectsInPointerPos();
-            
+
             if (!rootTransform) return uiObjs.Count > 0;
-            
+
             var childList = rootTransform.GetComponentsInChildren<RectTransform>().ToList();
             uiObjs.RemoveAll(x => !childList.Contains(x.gameObject.transform));
 
@@ -26,7 +26,7 @@ namespace CanTemplate.Utilities
         {
             var eventDataCurrentPosition = new PointerEventData(EventSystem.current)
             {
-                position = Touchscreen.current.position.ReadValue()
+                position = InputManager.GetLastTouchPos
             };
             var results = new List<RaycastResult>();
             EventSystem.current.RaycastAll(eventDataCurrentPosition, results);
@@ -43,9 +43,9 @@ namespace CanTemplate.Utilities
         /// <param name="updateChildsList">This list is filled in the Start, If True: updates the childs list</param>
         public static void OpenClose(string name, bool status, bool updateChildsList = false)
         {
-            if (updateChildsList) UIManager.instance.childs = UIManager.instance.GetComponentsInChildren<RectTransform>(true).ToList();
+            if (updateChildsList) UIManager.Instance.childs = UIManager.Instance.GetComponentsInChildren<RectTransform>(true).ToList();
 
-            var obj = UIManager.instance.childs.FirstOrDefault(x => x.name == name);
+            var obj = UIManager.Instance.childs.FirstOrDefault(x => x.name == name);
 
             if (!obj)
             {
@@ -64,9 +64,9 @@ namespace CanTemplate.Utilities
         /// <param name="updateChildsList">This list is filled in the Start, If True: updates the childs list</param>
         public static void OpenClose(GameObject uiObj, bool status, bool updateChildsList = false)
         {
-            if (updateChildsList) UIManager.instance.childs = UIManager.instance.GetComponentsInChildren<RectTransform>(true).ToList();
+            if (updateChildsList) UIManager.Instance.childs = UIManager.Instance.GetComponentsInChildren<RectTransform>(true).ToList();
 
-            var obj = UIManager.instance.childs.FirstOrDefault(x => x.gameObject == uiObj);
+            var obj = UIManager.Instance.childs.FirstOrDefault(x => x.gameObject == uiObj);
 
             if (!obj)
             {

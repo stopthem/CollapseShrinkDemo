@@ -7,7 +7,7 @@ namespace CanTemplate.Utilities
 {
     public static class WaitUtilities
     {
-        public static void WaitForAFrame(System.Action action) => CoroutineHelper.StartStaticCoroutine(WaitForFramesRoutine(1, action));
+        public static void WaitForAFrame(Action action) => CoroutineHelper.StartStaticCoroutine(WaitForFramesRoutine(1, action));
 
         public static void WaitForFrames(int howManyFrames, Action action) => CoroutineHelper.StartStaticCoroutine(WaitForFramesRoutine(howManyFrames, action));
 

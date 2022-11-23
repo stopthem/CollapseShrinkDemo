@@ -1,99 +1,112 @@
-﻿using System.Collections;
+﻿using System;
 using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.UI;
 using System.Linq;
+using CanTemplate.GameManaging;
+using CanTemplate.Money;
 using DG.Tweening;
 using TMPro;
-using CanTemplate.Extensions;
+using NaughtyAttributes;
+using UnityEngine.Events;
+using UnityEngine.InputSystem;
 
-public class UIManager : MonoBehaviour
+namespace CanTemplate.UI
 {
-    public static UIManager instance;
-
-    [HideInInspector] public List<RectTransform> childs = new();
-    [SerializeField] private TextMeshProUGUI[] levelTexts;
-
-    [Header("Fade"), Space(5), SerializeField]
-    private Image fadeImage;
-
-    [SerializeField] private float fadeDuration;
-    [SerializeField] private EaseSelection fadeEase;
-
-    [Header("Menu"), Space(5), SerializeField]
-    private GameObject menuPanel;
-
-    [Header("Game Panel"), Space(5), SerializeField]
-    private GameObject gamePanel;
-
-    [Header("Fail Panel"), Space(5), SerializeField]
-    private GameObject failPanel;
-
-    [Header("Success Panel"), Space(5), SerializeField]
-    private GameObject successPanel;
-
-    [SerializeField] private ParticleSystem confetti;
-
-    private void Awake()
+    public class UIManager : MonoBehaviour
     {
-        instance = this;
+        public static UIManager Instance { get; private set; }
 
-        childs = GetComponentsInChildren<RectTransform>(true).ToList();
-        childs.Remove(GetComponent<RectTransform>());
-    }
+        [HideInInspector] public List<RectTransform> childs = new();
+        [SerializeField] private TextMeshProUGUI[] levelTexts;
 
-    private void Start()
-    {
-        fadeImage.color = fadeImage.color.WithA(1);
-        HideAllPanel();
-        DoFade(false).OnComplete(() => ShowPanel(menuPanel));
+        private ScreenTransition _screenTransition;
 
-        foreach (var levelText in levelTexts)
+        [SerializeField] private PanelInfo[] panelInfos;
+        [Space(5)] public UnityEvent<GameStatus> onPanelShowed;
+
+        [InfoBox("Money Area Can Be Null")] public MoneyArea moneyArea;
+
+        [SerializeField, Space(5)] private ParticleSystem confetti;
+
+        [Space(5)] public Transform reactionTextParent;
+
+        private void Awake()
         {
-            levelText.text = "Level " + GameManager.CurrentLevelCount;
+            Instance = this;
+
+            childs = GetComponentsInChildren<RectTransform>(true).ToList();
+            childs.Remove(GetComponent<RectTransform>());
+
+            _screenTransition = GetComponentInChildren<ScreenTransition>();
         }
 
-        GameManager.instance.onGameFailed.AddListener(Fail);
-        GameManager.instance.onGameSuccess.AddListener(Success);
-    }
+        private void Start()
+        {
+            HideAllPanel();
+            _screenTransition.transform.SetAsLastSibling();
+            _screenTransition.OpenClose(false).OnComplete(() => ShowPanel(GameStatus.Menu));
 
-    public void StartGameButton()
-    {
-        GameManager.instance.StartGame();
-        ShowPanel(gamePanel);
-    }
+            foreach (var levelText in levelTexts)
+            {
+                levelText.text = "Level " + GameManager.CurrentLevelCount;
+            }
+        }
 
-    public void RestartLevelButton() => DoFade(true).OnComplete(GameManager.instance.RestartLevel);
+        public void StartGameButton()
+        {
+            HandleMoneyArea(false);
 
-    public void NextLevelButton() => DoFade(true).OnComplete(GameManager.instance.NextLevel);
+            ShowPanel(GameStatus.Play);
+            GameManager.Instance.StartGame();
+        }
 
-    private void Success()
-    {
-        confetti.Play();
+        public void RestartLevelButton() => _screenTransition.OpenClose(true).OnComplete(GameManager.Instance.RestartLevel);
 
-        ShowPanel(successPanel);
-    }
+        public void NextLevelButton() => _screenTransition.OpenClose(true).OnComplete(GameManager.Instance.NextLevel);
 
-    private void Fail() => ShowPanel(failPanel);
+        public void Success()
+        {
+            HandleMoneyArea(true);
 
-    private void ShowPanel(GameObject panel)
-    {
-        HideAllPanel();
-        panel.SetActive(true);
-    }
+            confetti.Play();
 
-    private void HideAllPanel()
-    {
-        menuPanel.SetActive(false);
-        gamePanel.SetActive(false);
-        failPanel.SetActive(false);
-        successPanel.SetActive(false);
-    }
+            ShowPanel(GameStatus.Success);
+        }
 
-    private Tween DoFade(bool fadeIn)
-    {
-        float toA = fadeIn ? 1 : 0;
-        fadeImage.color = fadeImage.color.WithA(fadeIn ? 0 : 1);
-        return fadeImage.DOColor(fadeImage.color.WithA(toA), fadeDuration).SetEase(fadeEase);
+        public void Fail()
+        {
+            ShowPanel(GameStatus.Fail);
+        }
+
+        private void ShowPanel(GameStatus gameStatus)
+        {
+            var foundPanel = panelInfos.First(panelInfo => panelInfo.gameStatus == gameStatus);
+
+            HideAllPanel();
+
+            foundPanel.panelObj.gameObject.SetActive(true);
+            onPanelShowed.Invoke(gameStatus);
+        }
+
+        private void HideAllPanel()
+        {
+            foreach (var panelInfo in panelInfos)
+            {
+                panelInfo.panelObj.SetActive(false);
+            }
+        }
+
+        private void HandleMoneyArea(bool status)
+        {
+            if (moneyArea)
+                moneyArea.gameObject.SetActive(status);
+        }
+
+        [Serializable]
+        private class PanelInfo
+        {
+            public GameStatus gameStatus;
+            public GameObject panelObj;
+        }
     }
 }

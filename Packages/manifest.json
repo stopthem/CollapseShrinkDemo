@@ -1,12 +1,14 @@
 {
   "dependencies": {
     "com.chark.scriptable-events": "https://github.com/chark/scriptable-events.git#upm",
+    "com.dbrizov.naughtyattributes": "https://github.com/dbrizov/NaughtyAttributes.git#upm",
+    "com.loophouse.scriptable-states": "https://github.com/luisoliveiras/scriptable-states.git#v0.4.0",
     "com.unity.2d.sprite": "1.0.0",
     "com.unity.cinemachine": "2.9.1",
-    "com.unity.ide.rider": "3.0.16",
-    "com.unity.inputsystem": "1.4.3",
+    "com.unity.ide.rider": "3.0.17",
+    "com.unity.inputsystem": "1.4.4",
     "com.unity.recorder": "3.0.3",
-    "com.unity.render-pipelines.universal": "12.1.7",
+    "com.unity.render-pipelines.universal": "12.1.8",
     "com.unity.textmeshpro": "3.0.6",
     "com.unity.timeline": "1.6.4",
     "com.unity.ugui": "1.0.0",

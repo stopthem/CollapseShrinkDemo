@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using CanTemplate.Pooling;
 using DG.Tweening;
 using UnityEngine;
 
@@ -11,17 +12,12 @@ namespace CanTemplate.Utilities
         /// <summary>
         /// Plays the particle from given object.
         /// </summary>
-        /// <param name="expObj">The particle system</param>
-        /// <param name="objTransform"></param>
-        /// <param name="pos">If setParent is true, note that this will be used as localPosition.</param>
-        /// <param name="scale"></param>
-        /// <param name="doParent"></param>
+        /// <param name="particleThe particle system</param>
         /// <param name="stopAction">If null, given particleSystem's stopAction will be used</param>
         /// <returns></returns>
-        public static ParticleSystem PlayParticle(GameObject expObj, Transform objTransform, Vector3? pos = null,
-            Vector3? scale = null, bool doParent = false, ParticleSystemStopAction? stopAction = null)
+        public static ParticleSystem PlayParticle(ParticleSystem particle, ParticlePlayOptions particlePlayOptions, ParticleSystemStopAction? stopAction = null)
         {
-            var particle = SetParticle(objTransform, pos, scale, doParent, expObj.GetComponent<ParticleSystem>());
+            SetParticle(particlePlayOptions, particle);
 
             particle.Play();
 
@@ -32,23 +28,18 @@ namespace CanTemplate.Utilities
         }
 
         /// <summary>
-        /// Plays the particle from found pooler which is found by given poolerName and returns it to the pooler after playing.
+        /// Plays the particle from found pooler which is found by given poolerTag and returns it to the pooler after playing.
         /// </summary>
         /// <param name="poolerTag"></param>
-        /// <param name="objTransform"></param>
-        /// <param name="pos">If setParent is true, note that this will be used as localPosition.</param>
-        /// <param name="scale"></param>
-        /// <param name="doParent"></param>
         /// <returns></returns>
-        public static ParticleSystem PlayParticle(string poolerTag, Transform objTransform, Vector3? pos = null,
-            Vector3? scale = null, bool doParent = false)
+        public static ParticleSystem PlayParticle(string poolerTag, ParticlePlayOptions particlePlayOptions)
         {
             var particle = PoolerHandler.GetPooler(poolerTag)?.Get<ParticleSystem>();
 
             if (!particle)
                 return null;
 
-            SetParticle(objTransform, pos, scale, doParent, particle);
+            SetParticle(particlePlayOptions, particle);
 
             particle.Play();
 
@@ -56,23 +47,39 @@ namespace CanTemplate.Utilities
         }
 
         /// <summary>
-        /// Plays the particle from found pooler which is found by given pooledParticleInfo and returns it to the pooler after playing.
+        /// Plays the particle from found pooler which is found by given <see cref="PooledObjInfoWithTag"/> and returns it to the pooler after playing.
         /// </summary>
         /// <param name="pooledObjInfoWithTag"></param>
-        /// <param name="objTransform"></param>
-        /// <param name="pos">If setParent is true, note that this will be used as localPosition.</param>
-        /// <param name="scale"></param>
-        /// <param name="doParent"></param>
         /// <returns></returns>
-        public static ParticleSystem PlayParticle(PooledObjInfoWithTag pooledObjInfoWithTag, Transform objTransform, Vector3? pos = null,
-            Vector3? scale = null, bool doParent = false)
+        public static ParticleSystem PlayParticle(PooledObjInfoWithTag pooledObjInfoWithTag, ParticlePlayOptions particlePlayOptions)
         {
             var particle = PoolerHandler.GetPooler(pooledObjInfoWithTag.poolerTag)?.Get<ParticleSystem>();
 
             if (!particle)
                 return null;
 
-            SetParticle(objTransform, pos, scale ?? Vector3.one * pooledObjInfoWithTag.scaleMultiplier, doParent, particle);
+            particlePlayOptions.playScale = Vector3.one * pooledObjInfoWithTag.scaleMultiplier;
+            SetParticle(particlePlayOptions, particle);
+
+            particle.Play();
+
+            return particle;
+        }
+
+        /// <summary>
+        /// Plays the particle from found pooler which is found by given <see cref="PooledObjInfoWithPooler"/> and returns it to the pooler after playing.
+        /// </summary>
+        /// <param name="pooledObjInfoWithPooler"></param>
+        /// <returns></returns>
+        public static ParticleSystem PlayParticle(PooledObjInfoWithPooler pooledObjInfoWithPooler, ParticlePlayOptions particlePlayOptions)
+        {
+            var particle = pooledObjInfoWithPooler.pooler.Get<ParticleSystem>();
+
+            if (!particle)
+                return null;
+
+            particlePlayOptions.playScale = Vector3.one * pooledObjInfoWithPooler.scaleMultiplier;
+            SetParticle(particlePlayOptions, particle);
 
             particle.Play();
 
@@ -84,40 +91,92 @@ namespace CanTemplate.Utilities
         /// Plays the particle from given pooler and returns it to the pooler after playing.
         /// </summary>
         /// <param name="pooler"></param>
-        /// <param name="objTransform"></param>
-        /// <param name="pos">If setParent is true, note that this will be used as localPosition.</param>
-        /// <param name="scale"></param>
-        /// <param name="doParent"></param>
         /// <returns></returns>
-        public static ParticleSystem PlayParticle(Pooler pooler, Transform objTransform, Vector3? pos = null,
-            Vector3? scale = null, bool doParent = false)
+        public static ParticleSystem PlayParticle(Pooler pooler, ParticlePlayOptions particlePlayOptions)
         {
             var particle = pooler.Get<ParticleSystem>();
 
-            SetParticle(objTransform, pos, scale, doParent, particle);
+            SetParticle(particlePlayOptions, particle);
 
             particle.Play();
 
             return particle;
         }
 
-        private static ParticleSystem SetParticle(Transform objTransform, Vector3? pos, Vector3? scale, bool doParent,
-            ParticleSystem particle)
+        private static ParticleSystem SetParticle(ParticlePlayOptions particlePlayOptions, ParticleSystem particle)
         {
-            var playPos = pos ?? (doParent ? Vector3.zero : objTransform.position);
-            var playScale = scale ?? particle.transform.localScale;
+            particle.gameObject.SetActive(true);
 
-            if (doParent)
+            var particleTransform = particle.transform;
+
+            particlePlayOptions.playPos ??= particlePlayOptions.doParent ? Vector3.zero : particlePlayOptions.PlayTransform.position;
+            particlePlayOptions.playScale ??= particleTransform.localScale;
+            particlePlayOptions.playRotation ??= particleTransform.rotation;
+
+            if (particlePlayOptions.doParent)
             {
-                particle.transform.parent = objTransform;
-                particle.transform.localPosition = playPos;
+                particleTransform.parent = particlePlayOptions.PlayTransform;
+                particleTransform.localPosition = particlePlayOptions.playPos.Value;
+                particleTransform.localRotation = particlePlayOptions.playRotation.Value;
             }
-            else particle.transform.position = playPos;
+            else
+            {
+                particleTransform.position = particlePlayOptions.playPos.Value;
+                particleTransform.rotation = particlePlayOptions.playRotation.Value;
+            }
 
-            if (playScale != Vector3.zero)
-                particle.transform.localScale = playScale;
+            particleTransform.localScale = particlePlayOptions.playScale.Value;
+
+            if (particlePlayOptions.color.HasValue)
+            {
+                ChangeParticleColor(particle, particlePlayOptions.color.Value);
+            }
 
             return particle;
+        }
+
+        /// <summary>
+        /// Only changes start color of given particle and its particle childs.
+        /// </summary>
+        /// <param name="particle"></param>
+        /// <param name="color"></param>
+        public static void ChangeParticleColor(ParticleSystem particle, Color color, bool includeInactive = true)
+        {
+            foreach (var particleSystem in particle.GetComponentsInChildren<ParticleSystem>(includeInactive))
+            {
+                var main = particleSystem.main;
+                main.startColor = color;
+            }
+        }
+
+        public class ParticlePlayOptions
+        {
+            public ParticlePlayOptions(Transform playTransform)
+            {
+                PlayTransform = playTransform;
+            }
+
+            public Transform PlayTransform { get; }
+
+            /// <summary>
+            /// Can be null
+            /// <para>if non is given, particle will play with a position of playTransform.position</para>
+            /// </summary>
+            public Vector3? playPos;
+
+            /// <summary>
+            /// Can be null
+            /// <para>if non is given, particle will play with a scale of Vector3.one</para>
+            /// </summary>
+            public Vector3? playScale;
+
+            /// <summary>
+            /// Only going to change start colors if has a value
+            /// </summary>
+            public Color? color;
+
+            public Quaternion? playRotation;
+            public bool doParent = false;
         }
     }
 }

@@ -4,43 +4,42 @@ using System.Collections.Generic;
 using System.Linq;
 using CanTemplate.Extensions;
 using UnityEngine;
-using UnityEngine.Pool;
 
-public class PoolerHandler : MonoBehaviour
+namespace CanTemplate.Pooling
 {
-    public static PoolerHandler instance;
-
-    private List<Pooler> _poolers = new();
-
-    private void Awake()
+    public class PoolerHandler : Singleton<PoolerHandler>
     {
-        instance = this;
-    }
+        private List<Pooler> _poolers = new();
 
-    public static void AddToPoolers(Pooler pooler) => instance._poolers.AddIfNotPresent(pooler);
+        public static void AddToPoolers(Pooler pooler) => Instance._poolers.AddIfNotPresent(pooler);
 
-    public static Pooler GetPooler(string tag)
-    {
-        var pooler = instance._poolers.FirstOrDefault(x => x.poolerInfo.poolerTag == tag);
-        if (pooler) return pooler;
-
-        Debug.Log("PoolerHandler > couldn't find Pooler With Tag: " + "<color=red>" + tag + "</color>");
-        return null;
-    }
-
-    public static Pooler CreatePooler(PoolerInfo poolerInfo, string name)
-    {
-        var pooler = new GameObject(name)
+        public static Pooler GetPooler(string tag, bool warnMsj = true)
         {
-            transform =
-            {
-                parent = instance.transform,
-                localPosition = Vector3.zero
-            }
-        };
+            var pooler = Instance._poolers.FirstOrDefault(x => x.poolerInfo.poolerTag == tag);
+            if (pooler) return pooler;
 
-        var poolerScript = pooler.AddComponent<Pooler>();
-        poolerScript.poolerInfo = poolerInfo;
-        return poolerScript;
+            if (warnMsj) Debug.Log("PoolerHandler > couldn't find Pooler With Tag: " + "<color=red>" + tag + "</color>");
+            return null;
+        }
+
+        public static Pooler CreatePooler(PoolerInfo poolerInfo)
+        {
+            var foundPooler = GetPooler(poolerInfo.poolerTag, false);
+            if (foundPooler) return foundPooler;
+
+            var pooler = new GameObject($"{poolerInfo.poolerTag} Pooler")
+            {
+                transform =
+                {
+                    parent = Instance.transform,
+                    localPosition = Vector3.zero
+                }
+            };
+
+            var poolerScript = pooler.AddComponent<Pooler>();
+            poolerScript.poolerInfo = poolerInfo;
+            AddToPoolers(poolerScript);
+            return poolerScript;
+        }
     }
 }

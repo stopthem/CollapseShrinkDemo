@@ -33,5 +33,12 @@ namespace CanTemplate.Extensions
         /// <param name="worldRotation"></param>
         /// <returns></returns>
         public static Quaternion InverseTransformRotation(this Transform t, Quaternion worldRotation) => Quaternion.Inverse(t.rotation) * worldRotation;
+
+        public static Vector3 AnchoredPositionToScreenPosition(this RectTransform rectTransform, Vector3 anchoredPos)
+        {
+            var toDestinationInWorldSpace = rectTransform.position - anchoredPos;
+            var toDestinationInLocalSpace = rectTransform.InverseTransformVector(toDestinationInWorldSpace);
+            return rectTransform.anchoredPosition + (Vector2)toDestinationInLocalSpace;
+        }
     }
 }

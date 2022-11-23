@@ -158,7 +158,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1376866784791781782}
   m_Layer: 0
-  m_Name: Toggle_Switch
+  m_Name: Toggle_Switch_Light
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0

@@ -1,147 +1,101 @@
-using System;
-using System.Collections;
-using System.Collections.Generic;
-using CanTemplate;
-using Coffee.UIEffects;
-using DG.Tweening;
+using CubeShooter;
 using UnityEngine;
-using DG.DeInspektor.Attributes;
-using UnityEngine.Events;
-using UnityEngine.EventSystems;
-using CanTemplate.Extensions;
-using ScriptableEvents.Events;
+using UnityEditor;
+#if UNITY_EDITOR
+using UnityEditor.UI;
+#endif
+using UnityEngine.UI;
 
-public class AnimatedButton : MonoBehaviour, IPointerClickHandler
+namespace CanTemplate.UI
 {
-    [SerializeField] private bool canInteract = true;
-
-    [SerializeField, Space(5)] private StartingBehaviour startingBehaviour;
-    [SerializeField] private bool noInteractAfterClicked = true;
-
-    [Header("Open and close tween options"), Space(5), SerializeField]
-    private TweenOptionsDEase openCloseTweenOptions = new()
+    [RequireComponent(typeof(Animator)), RequireComponent(typeof(Image))]
+    public class AnimatedButton : Button
     {
-        duration = .25f,
-        ease = Ease.OutBack,
-        secondEase = Ease.InBack
-    };
+        [HideInInspector, Space(5)] public StartingBehaviour startingBehaviour;
+        [HideInInspector] public bool notInteractableAfterClicked = true;
 
-    [Header("Clicked tween options"), Space(5)] [SerializeField]
-    private FTweenOptions clickedFTweenOptions = new()
-    {
-        duration = .15f,
-        ease = Ease.InOutSine,
-        target = .9f
-    };
+        private Animator _animator;
 
-    public UnityEvent onClick;
-
-    public bool IsOpen { get; private set; }
-
-    private Tween _scaleTween;
-
-    private Animator _animator;
-
-    private void Awake()
-    {
-        _animator = GetComponent<Animator>();
-    }
-
-    private void Start()
-    {
-        switch (startingBehaviour)
+        protected override void Awake()
         {
-            case StartingBehaviour.StartOpen:
-                break;
-            case StartingBehaviour.StartClosed:
-                InstantClose();
-                break;
-            case StartingBehaviour.StartClosedThenOpen:
-                InstantClose();
-                Open();
-                break;
+            base.Awake();
+
+            _animator = GetComponent<Animator>();
+
+            onClick.AddListener(Click);
+        }
+
+        protected override void Start()
+        {
+            base.Start();
+
+            switch (startingBehaviour)
+            {
+                case StartingBehaviour.StartOpen:
+                    OpenOrClose(true, true);
+                    break;
+                case StartingBehaviour.StartClosed:
+                    OpenOrClose(false, true);
+                    break;
+                case StartingBehaviour.StartClosedThenOpen:
+                    OpenOrClose(false, true);
+                    OpenOrClose(true);
+                    break;
+            }
+        }
+
+        public void OpenOrClose(bool open, bool instant = false, bool returnIfSame = true)
+        {
+            if (((open && animator.GetCurrentAnimatorStateInfo(0).IsName("Open")) || (!open && animator.GetCurrentAnimatorStateInfo(0).IsName("Close"))) && returnIfSame)
+                return;
+
+            if (instant)
+            {
+                _animator.Play(open ? "Open" : "Close", 0, 1);
+
+                return;
+            }
+
+            _animator.SetTrigger(open ? AnimatorParams.OpenId : AnimatorParams.CloseId);
+        }
+
+        private void Click()
+        {
+            if (!interactable) return;
+
+            if (notInteractableAfterClicked) interactable = false;
+
+            animator.SetTrigger(AnimatorParams.ClickId);
+        }
+
+        public enum StartingBehaviour
+        {
+            StartOpen,
+            StartClosed,
+            StartClosedThenOpen
         }
     }
 
-    public void Open()
+#if UNITY_EDITOR
+    [CustomEditor(typeof(AnimatedButton), true), CanEditMultipleObjects]
+    public class AnimatedButtonEditor : ButtonEditor
     {
-        if (!IsOpen)
-            OpenOrClose(true);
-    }
-
-    private void ResetScale(float toScale)
-    {
-        transform.DOKill();
-        transform.localScale = Vector3.one * toScale;
-    }
-
-    private void OpenOrClose(bool open)
-    {
-        float toScale = open ? 1 : 0;
-        ResetScale(open ? 0 : 1);
-
-        IsOpen = open;
-
-        if (!open) ChangeInteract(false);
-
-        _scaleTween = transform.DOScale(toScale, openCloseTweenOptions.duration).SetEase(open ? openCloseTweenOptions.ease : openCloseTweenOptions.secondEase)
-                               .OnComplete(() =>
-                               {
-                                   if (open) ChangeInteract(true);
-                               });
-    }
-
-    public void Close(bool instant = false)
-    {
-        if (!IsOpen) return;
-
-        if (instant)
-            InstantClose();
-        else
-            OpenOrClose(false);
-    }
-
-    private void InstantClose()
-    {
-        IsOpen = false;
-        transform.localScale = Vector3.zero;
-    }
-
-    public void ClickedTween()
-    {
-        if (_scaleTween.IsActive() && _scaleTween.IsPlaying()) return;
-        ResetScale(1);
-        if (_animator) _animator.enabled = false;
-        _scaleTween = transform.DOScale(clickedFTweenOptions.target, clickedFTweenOptions.duration / 2).SetEase(clickedFTweenOptions.ease).SetLoops(2, LoopType.Yoyo).SetUpdate(true).OnComplete(() =>
+        public override void OnInspectorGUI()
         {
-            if (_animator)
-            {
-                _animator.enabled = true;
-            }
-        });
+            var script = target as AnimatedButton;
+
+            serializedObject.Update();
+
+            EditorGUILayout.PropertyField(serializedObject.FindProperty("startingBehaviour"));
+            script.notInteractableAfterClicked = EditorGUILayout.Toggle("Not Interactable After Clicked", script.notInteractableAfterClicked);
+
+            GUILayout.Space(10);
+
+            serializedObject.ApplyModifiedProperties();
+            if (GUI.changed) EditorUtility.SetDirty(script);
+
+            base.OnInspectorGUI();
+        }
     }
-
-    public void ChangeInteract(bool status) => canInteract = status;
-
-    private void Click()
-    {
-        if (!canInteract) return;
-
-        if (noInteractAfterClicked) ChangeInteract(false);
-
-        ClickedTween();
-        onClick.Invoke();
-    }
-
-    public void OnPointerClick(PointerEventData eventData)
-    {
-        Click();
-    }
-
-    private enum StartingBehaviour
-    {
-        StartOpen,
-        StartClosed,
-        StartClosedThenOpen
-    }
+#endif
 }

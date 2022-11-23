@@ -3,14 +3,19 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Pool;
 
-public class Poolable : MonoBehaviour
+namespace CanTemplate.Pooling
 {
-    public IObjectPool<Poolable> Pool { get; private set; }
-
-    public void ReturnToPool() => Pool.Release(this);
-
-    public void Init(IObjectPool<Poolable> pooler)
+    public class Poolable : MonoBehaviour
     {
-        Pool = pooler;
+        public Pooler Pooler { get; private set; }
+
+        public void ReturnToPool() => Pooler.Pool.Release(this);
+
+        public void ResetParent() => transform.parent = Pooler.transform;
+
+        public void Init(Pooler pooler)
+        {
+            Pooler = pooler;
+        }
     }
 }

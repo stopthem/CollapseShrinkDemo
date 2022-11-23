@@ -9,10 +9,10 @@ public class MinMaxSliderAttribute : PropertyAttribute
     public readonly float min;
     public readonly float max;
     public readonly float floatFieldWidthMultiplier;
-    public readonly bool dataFields = true;
-    public readonly bool flexibleFields = true;
-    public readonly bool bound = true;
-    public readonly bool round = true;
+    public const bool DataFields = true;
+    public const bool FlexibleFields = true;
+    public const bool Bound = true;
+    public const bool Round = false;
 
     public MinMaxSliderAttribute() : this(0, 1)
     {

@@ -2,17 +2,21 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-public class ParticlePoolable : Poolable
+namespace CanTemplate.Pooling
 {
-    private ParticleSystem _particleSystem;
-
-    private void Awake()
+    [RequireComponent(typeof(ParticleSystem))]
+    public class ParticlePoolable : Poolable
     {
-        _particleSystem = GetComponent<ParticleSystem>();
+        private ParticleSystem _particleSystem;
 
-        var main = _particleSystem.main;
-        main.stopAction = ParticleSystemStopAction.Callback;
+        private void Awake()
+        {
+            _particleSystem = GetComponent<ParticleSystem>();
+
+            var main = _particleSystem.main;
+            main.stopAction = ParticleSystemStopAction.Callback;
+        }
+
+        private void OnParticleSystemStopped() => ReturnToPool();
     }
-
-    private void OnParticleSystemStopped() => ReturnToPool();
 }

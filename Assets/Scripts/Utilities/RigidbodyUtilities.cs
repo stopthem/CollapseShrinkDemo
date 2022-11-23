@@ -13,8 +13,10 @@ namespace CanTemplate.Utilities
 
             foreach (var body in bodies)
             {
-                centerOfMass += body.worldCenterOfMass * body.mass;
-                totalMass += body.mass;
+                var mass = body.mass;
+                
+                centerOfMass += body.worldCenterOfMass * mass;
+                totalMass += mass;
             }
 
             return centerOfMass / totalMass;

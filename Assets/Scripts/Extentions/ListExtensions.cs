@@ -44,16 +44,15 @@ namespace CanTemplate.Extensions
             return list[Random.Range(0, list.Count)];
         }
 
-        public static List<T> OrderByRandom<T>(this List<T> list) => list.OrderBy(x => Random.Range(0, list.Count)).ToList();
+        public static List<T> OrderByRandom<T>(this List<T> list) => list.OrderBy(_ => Random.Range(0, list.Count)).ToList();
 
         public static bool AddIfNotPresent<T>(this List<T> list, T element)
         {
             if (list.Contains(element)) return false;
-            
-            list.Add(element);
-            
-            return true;
 
+            list.Add(element);
+
+            return true;
         }
     }
 }

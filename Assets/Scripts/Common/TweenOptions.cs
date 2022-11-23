@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using CanTemplate.Extensions;
 using DG.Tweening;
 using UnityEngine;
 
@@ -10,7 +11,8 @@ namespace CanTemplate
     public class TweenOptions
     {
         public float duration;
-        public Ease ease;
+        public EaseSelection easeSelection;
+        public Tween myTween;
     }
 
     [Serializable]
@@ -22,6 +24,6 @@ namespace CanTemplate
     [Serializable]
     public class TweenOptionsDEase : TweenOptions
     {
-        public Ease secondEase;
+        public EaseSelection secondEaseSelection;
     }
 }

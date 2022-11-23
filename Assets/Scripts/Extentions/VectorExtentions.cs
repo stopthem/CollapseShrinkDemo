@@ -36,10 +36,12 @@ namespace CanTemplate.Extensions
         }
 
         public static Vector2 WithX(this Vector2 v, float x) => new Vector2(x, v.y);
-        public static Vector2 WithY(this Vector2 v, float y) => new Vector2(v.x, y);
+        public static Vector2 WithY(this Vector2 v, float y, bool relative = false) => new Vector2(v.x, relative ? v.y + y : y);
 
         public static float GetRandom(this Vector2 v) => Random.Range(v.x, v.y);
         public static int GetRandomInt(this Vector2 v) => (int)Random.Range(v.x, v.y);
+
+        public static int GetRandom(this Vector2Int v) => Random.Range(v.x, v.y);
 
         ///<summary>Returns a direction from target vector to given vector.</summary>
         ///<param name ="normalized">Returns calculated vector with a magnitude of 1.</param>
@@ -68,5 +70,7 @@ namespace CanTemplate.Extensions
         public static float ClampBetween(this Vector2 range, float value) => Mathf.Clamp(value, range.x, range.y);
 
         public static Vector2 Reversed(this Vector2 range) => new(range.y, range.x);
+
+        public static Vector3 V2ToV3(this Vector2 v, float z = 0) => new Vector3(v.x, v.y, z);
     }
 }

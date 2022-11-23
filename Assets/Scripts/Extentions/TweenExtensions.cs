@@ -5,6 +5,7 @@ using DG.Tweening;
 using System;
 using System.Linq;
 using CanTemplate.Utilities;
+using Dreamteck.Splines.Primitives;
 
 namespace CanTemplate.Extensions
 {
@@ -18,11 +19,11 @@ namespace CanTemplate.Extensions
             var toPos = to.position;
             var toRotation = to.rotation.ClampEuler();
             return DOTween.Sequence()
-                          .SetTarget(t)
-                          .Append(t.DOMove(toPos, duration)
-                                   .SetEase(ease))
-                          .Join(t.DORotate(toRotation, duration)
-                                 .SetEase(ease));
+                .SetTarget(t)
+                .Append(t.DOMove(toPos, duration)
+                    .SetEase(ease))
+                .Join(t.DORotate(toRotation, duration)
+                    .SetEase(ease));
         }
 
         ///<summary>Moves and rotates target transform to given transform in local space.
@@ -33,25 +34,25 @@ namespace CanTemplate.Extensions
             var toPos = to.localPosition;
             var toRotation = to.localRotation.ClampEuler();
             return DOTween.Sequence()
-                          .SetTarget(t)
-                          .Append(t.DOLocalMove(toPos, duration)
-                                   .SetEase(ease))
-                          .Join(t.DOLocalRotate(toRotation, duration)
-                                 .SetEase(ease));
+                .SetTarget(t)
+                .Append(t.DOLocalMove(toPos, duration)
+                    .SetEase(ease))
+                .Join(t.DOLocalRotate(toRotation, duration)
+                    .SetEase(ease));
         }
 
         ///<summary>Sets given loopType with amount of <see langword ="loopAmount"/> and given <see langword ="delayBetweenLoops"/> between loops to target tween and returns a Sequence.
         ///<para>Also sets the returned sequences target to given transform for filtering operations.</para>
         /// </summary>
-        public static Sequence SetLoopsWithDelay(this Tween t, float delayBetweenLoops, int loopAmount = 2, LoopType loopType = LoopType.Yoyo, bool delayAtStart = false)
+        public static Sequence SetLoopsWithDelay(this Tween t, float delayBetweenLoops, int loopAmount = 2, LoopType loopType = LoopType.Yoyo, bool delayAtStart = true)
         {
             var seq = DOTween.Sequence();
             if (delayAtStart) seq.AppendInterval(delayBetweenLoops);
 
             seq.Append(t)
-               .AppendInterval(delayBetweenLoops)
-               .SetLoops(loopAmount, loopType)
-               .SetTarget(t.target);
+                .AppendInterval(delayBetweenLoops)
+                .SetLoops(loopAmount, loopType)
+                .SetTarget(t.target);
             return seq;
         }
 
@@ -74,7 +75,7 @@ namespace CanTemplate.Extensions
         /// <param name="ignoreTimeScale">Should DOTween ignore Time.Timescale when waiting ?</param>
         public static Tween CallbackAtTime(this Tween t, float time, TweenCallback callback, bool includeLoops = true, bool ignoreTimeScale = false)
         {
-            var callBackTween = DOVirtual.DelayedCall(t.Duration(includeLoops) * time, callback, ignoreTimeScale);
+            var callBackTween = DOVirtual.DelayedCall(t.Duration(includeLoops) * time, callback, ignoreTimeScale).SetEase(Ease.Linear);
             t.OnKill(() => callBackTween.Kill());
 
             return t;
@@ -87,15 +88,13 @@ namespace CanTemplate.Extensions
         /// <param name="ignoreTimeScale">Should DOTween ignore Time.Timescale when waiting ?</param>
         public static Tween CallbackAtTimeSpeedBased(this Tween t, float time, TweenCallback callback, bool includeLoops = true, bool ignoreTimeScale = false)
         {
-            WaitUtilities.WaitForAFrame(() =>
-            {
-                var callBackTween = DOVirtual.DelayedCall(t.Duration(includeLoops) * time, callback, ignoreTimeScale);
-                t.OnKill(() => callBackTween.Kill());
-            });
+            t.ForceInit();
+            var callBackTween = DOVirtual.DelayedCall(t.Duration(includeLoops) * time, callback, ignoreTimeScale).SetEase(Ease.Linear);
+            t.OnKill(() => callBackTween.Kill());
 
             return t;
         }
-        
+
         public static bool IsActiveNPlaying(this Tween t) => t.IsActive() && t.IsPlaying();
     }
 }

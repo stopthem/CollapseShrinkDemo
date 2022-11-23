@@ -87,11 +87,11 @@ providers = {
 objectSelectors = {
 }
 recentSearches = [
+	"t"
 	"ö"
 	"e"
 	"t:"
 	"t:te"
-	"t"
 	"m"
 ]
 searchItemFavorites = [

@@ -1,11 +1,8 @@
 using System;
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 using DG.Tweening;
 using UnityEditor;
 using System.Globalization;
-using System.Threading;
 
 namespace CanTemplate.Extensions
 {
@@ -24,7 +21,7 @@ namespace CanTemplate.Extensions
 
         public EaseSelection(AnimationCurve curve)
         {
-            easeOption = EaseOptions.CustomAnimationCurve;
+            easeOption = EaseOptions.AnimationCurve;
             animationCurve = curve;
         }
 
@@ -42,36 +39,40 @@ namespace CanTemplate.Extensions
     public enum EaseOptions
     {
         DOTweenEases,
-        CustomAnimationCurve
+        AnimationCurve
     }
 
 #if UNITY_EDITOR
     [CustomPropertyDrawer(typeof(EaseSelection))]
-    public class EaseSelection_Drawer : PropertyDrawer
+    public class EaseSelectionDrawer : PropertyDrawer
     {
         public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
         {
             EditorGUI.BeginProperty(position, label, property);
+
             position = EditorGUI.PrefixLabel(position, GUIUtility.GetControlID(FocusType.Passive), label);
 
+            EditorGUI.indentLevel--;
+            
             var optionRect = new Rect(position.x + position.width / 2, position.y, position.width - position.width / 2, position.height);
 
-            SerializedProperty easeOption = property.FindPropertyRelative("easeOption");
-            int actualSelected = 0;
-            int selectionFromInspector = easeOption.intValue;
-            string[] easeOptionNames = Enum.GetNames(typeof(EaseOptions));
+            var easeOption = property.FindPropertyRelative("easeOption");
+            var selectionFromInspector = easeOption.intValue;
+            var easeOptionNames = Enum.GetNames(typeof(EaseOptions));
             for (int i = 0; i < easeOptionNames.Length; i++)
             {
                 TextInfo textInfo = CultureInfo.InvariantCulture.TextInfo;
                 easeOptionNames[i] = textInfo.ToTitleCase(easeOptionNames[i].ToLowercaseNamingConvention(true));
             }
 
-            actualSelected = EditorGUI.Popup(new Rect(position.x, position.y, position.width / 2, position.height), selectionFromInspector, easeOptionNames);
+            var actualSelected = EditorGUI.Popup(new Rect(position.x, position.y, position.width / 2, position.height), selectionFromInspector, easeOptionNames);
             easeOption.intValue = actualSelected;
 
-            string propertyName = actualSelected == 0 ? "ease" : "animationCurve";
+            var propertyName = actualSelected == 0 ? "ease" : "animationCurve";
             EditorGUI.PropertyField(optionRect, property.FindPropertyRelative(propertyName), GUIContent.none);
 
+            EditorGUI.indentLevel++;
+            
             EditorGUI.EndProperty();
         }
     }

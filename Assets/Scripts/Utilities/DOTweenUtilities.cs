@@ -10,31 +10,31 @@ namespace CanTemplate.Utilities
 {
     public static class DOTweenUtilities
     {
-        public static Tween CallbackWhileWait(float duration, TweenCallback onUpdate, TweenCallback onCompleted = null) => DOVirtual.DelayedCall(duration, onCompleted).OnUpdate(onUpdate);
-
-        public static void LoopWait<T>(List<T> list, float delayBetweenElements, System.Action<T, int, bool> elementAction, bool ignoreTimescale = true)
+        public static Tween CallbackWhileWait(float duration, TweenCallback<float> onUpdate, TweenCallback onCompleted = null)
         {
-            var loopCount = 0;
+            var t = DOVirtual.DelayedCall(duration, onCompleted);
 
-            var t = DOVirtual.DelayedCall(delayBetweenElements, () => { Debug.Log("loop waiting step complete"); }, ignoreTimescale).SetLoops(list.Count);
+            t.OnUpdate(() => onUpdate.Invoke(t.ElapsedPercentage()));
 
-            t.OnStepComplete(() =>
-            {
-                var element = list.ElementAt(loopCount);
-                elementAction.Invoke(element, loopCount, loopCount == list.Count - 1);
-                loopCount++;
-            });
+            return t;
         }
+
+        public static Tween LoopWait<T>(List<T> list, float delayBetweenElements, System.Action<T, int, bool> elementAction, bool ignoreTimescale = true) =>
+            LoopWait(list.Count, delayBetweenElements, (i, isLast) => elementAction.Invoke(list.ElementAt(i), i, isLast), ignoreTimescale);
 
         public static Tween LoopWait(int count, float delayBetweenElements, System.Action<int, bool> elementAction, bool ignoreTimescale = true)
         {
             var loopCount = 0;
 
-            return DOVirtual.DelayedCall(delayBetweenElements, () =>
+            var t = DOVirtual.DelayedCall(delayBetweenElements, () => { }, ignoreTimescale).SetLoops(count);
+
+            t.OnStepComplete(() =>
             {
                 elementAction.Invoke(loopCount, loopCount == count - 1);
                 loopCount++;
-            }, ignoreTimescale).SetLoops(count);
+            });
+
+            return t;
         }
     }
 }

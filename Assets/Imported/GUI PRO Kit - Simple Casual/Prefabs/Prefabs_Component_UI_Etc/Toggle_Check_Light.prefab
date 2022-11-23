@@ -87,7 +87,7 @@ GameObject:
   - component: {fileID: 1203068008558200108}
   - component: {fileID: 1203068008558200099}
   m_Layer: 0
-  m_Name: Toggle_Check
+  m_Name: Toggle_Check_Light
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
