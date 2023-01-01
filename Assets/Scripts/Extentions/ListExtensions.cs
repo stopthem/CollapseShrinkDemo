@@ -1,7 +1,11 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using JetBrains.Annotations;
 using UnityEngine;
+using Object = UnityEngine.Object;
+using Random = UnityEngine.Random;
 
 namespace CanTemplate.Extensions
 {
@@ -23,8 +27,32 @@ namespace CanTemplate.Extensions
         /// <returns></returns>
         public static T GetRandomElementOrDefault<T>(this List<T> list, bool firstOrderRandom = false)
         {
-            if (firstOrderRandom) list = list.OrderBy(x => Random.Range(0, list.Count)).ToList();
-            return list.Count > 0 ? list[Random.Range(0, list.Count)] : default(T);
+            if (firstOrderRandom) list = list.OrderByRandom();
+            return list.Count > 0 ? list[Random.Range(0, list.Count)] : default;
+        }
+
+        /// <summary>
+        /// Returns a random element in this list.
+        /// </summary>
+        /// <param name="list"></param>
+        /// <param name="firstOrderRandom"></param>
+        /// <typeparam name="T"></typeparam>
+        /// <returns></returns>
+        public static T GetRandomElement<T>(this List<T> list, bool firstOrderRandom = false)
+        {
+            if (firstOrderRandom) list = list.OrderByRandom();
+            return list[Random.Range(0, list.Count)];
+        }
+
+        public static List<T> OrderByRandom<T>(this List<T> list) => list.OrderBy(_ => Random.Range(0, list.Count)).ToList();
+
+        public static bool AddIfNotPresent<T>(this List<T> list, T element)
+        {
+            if (list.Contains(element)) return false;
+
+            list.Add(element);
+
+            return true;
         }
     }
 }

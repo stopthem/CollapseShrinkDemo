@@ -2,19 +2,21 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-namespace CanTemplate.Utils
+namespace CanTemplate.Utilities
 {
     public static class RigidbodyUtilities
     {
-        public static Vector3 GetRBSCenterOfMass(Rigidbody[] bodies)
+        public static Vector3 GetRbsCenterOfMass(Rigidbody[] bodies)
         {
-            Vector3 centerOfMass = Vector3.zero;
-            float totalMass = 0f;
+            var centerOfMass = Vector3.zero;
+            var totalMass = 0f;
 
-            foreach (Rigidbody body in bodies)
+            foreach (var body in bodies)
             {
-                centerOfMass += body.worldCenterOfMass * body.mass;
-                totalMass += body.mass;
+                var mass = body.mass;
+                
+                centerOfMass += body.worldCenterOfMass * mass;
+                totalMass += mass;
             }
 
             return centerOfMass / totalMass;

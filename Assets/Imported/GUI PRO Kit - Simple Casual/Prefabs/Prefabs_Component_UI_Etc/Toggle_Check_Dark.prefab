@@ -13,7 +13,7 @@ GameObject:
   - component: {fileID: 340641064963180925}
   - component: {fileID: 340641064963180914}
   m_Layer: 0
-  m_Name: Toggle_Check
+  m_Name: Toggle_Check_Dark
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0

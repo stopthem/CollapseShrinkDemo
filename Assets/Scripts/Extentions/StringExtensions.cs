@@ -25,7 +25,7 @@ namespace CanTemplate.Extensions
 
         public static int NthIndexOf(this string s, string c, int n)
         {
-            var takeCount = s.TakeWhile(x => (n -= (x.ToString() == c ? 1 : 0)) > 0).Count();
+            var takeCount = s.TakeWhile(x => (n -= x.ToString() == c ? 1 : 0) > 0).Count();
             return takeCount == s.Length ? -1 : takeCount;
         }
     }

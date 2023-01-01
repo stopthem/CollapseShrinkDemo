@@ -1,0 +1,88 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: -349248422, guid: 644d4fb097bb8504797992362b470595, type: 3}
+  m_Name: -DeProjectData
+  m_EditorClassIdentifier: 
+  evidenceType: 0
+  customizedItems:
+  - guid: bceec4f0b07bb1746bb38cb4f027e177
+    hColor: 0
+    icoType: 18
+    customColor: {r: 1, g: 1, b: 1, a: 1}
+    customIcon: {fileID: 0}
+    customIconOffsetX: 2
+    customIconOffsetY: 2
+    customIconMaxSize: 16
+  - guid: a7cb4c034c912034dab6214a033bee67
+    hColor: 12
+    icoType: 3
+    customColor: {r: 1, g: 1, b: 1, a: 1}
+    customIcon: {fileID: 0}
+    customIconOffsetX: 2
+    customIconOffsetY: 2
+    customIconMaxSize: 16
+  - guid: cd6688fa4e80ba04ba452fb2ba986e28
+    hColor: 3
+    icoType: 5
+    customColor: {r: 1, g: 1, b: 1, a: 1}
+    customIcon: {fileID: 0}
+    customIconOffsetX: 2
+    customIconOffsetY: 2
+    customIconMaxSize: 16
+  - guid: d0df6ebf33e273646b93acf049e3243c
+    hColor: 4
+    icoType: 5
+    customColor: {r: 1, g: 1, b: 1, a: 1}
+    customIcon: {fileID: 0}
+    customIconOffsetX: 2
+    customIconOffsetY: 2
+    customIconMaxSize: 16
+  - guid: 90436cb53ec1aa74c89d023b45158e10
+    hColor: 5
+    icoType: 2
+    customColor: {r: 1, g: 1, b: 1, a: 1}
+    customIcon: {fileID: 0}
+    customIconOffsetX: 2
+    customIconOffsetY: 2
+    customIconMaxSize: 16
+  - guid: fdddc2f2a5a8e2f4b9bf1c5666620779
+    hColor: 4
+    icoType: 10
+    customColor: {r: 1, g: 1, b: 1, a: 1}
+    customIcon: {fileID: 0}
+    customIconOffsetX: 2
+    customIconOffsetY: 2
+    customIconMaxSize: 16
+  - guid: 21338d40f7468064696e9c51a7f18a71
+    hColor: 2
+    icoType: 10
+    customColor: {r: 1, g: 1, b: 1, a: 1}
+    customIcon: {fileID: 0}
+    customIconOffsetX: 2
+    customIconOffsetY: 2
+    customIconMaxSize: 16
+  - guid: 072fe324a4342bf4d8d164390cc6cfb0
+    hColor: 12
+    icoType: 17
+    customColor: {r: 1, g: 1, b: 1, a: 1}
+    customIcon: {fileID: 0}
+    customIconOffsetX: 2
+    customIconOffsetY: 2
+    customIconMaxSize: 16
+  - guid: 7af6a31da2a1613478f08451a1077ef5
+    hColor: 4
+    icoType: 11
+    customColor: {r: 1, g: 1, b: 1, a: 1}
+    customIcon: {fileID: 0}
+    customIconOffsetX: 2
+    customIconOffsetY: 2
+    customIconMaxSize: 16

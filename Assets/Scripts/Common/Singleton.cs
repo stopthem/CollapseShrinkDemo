@@ -16,7 +16,7 @@ public class Singleton<T> : MonoBehaviour where T : MonoBehaviour
 
     protected virtual void Start()
     {
-        var foundObjects = GameObject.FindObjectsOfType<T>();
+        var foundObjects = FindObjectsOfType<T>();
         if (foundObjects.FirstOrDefault(x => x.gameObject != gameObject))
             Destroy(gameObject);
     }
@@ -29,7 +29,8 @@ public class Singleton<T> : MonoBehaviour where T : MonoBehaviour
             {
                 return default;
             }
-            T instance = default;
+
+            T instance;
             lock (_lock)
             {
                 if (_instance == null)
@@ -39,11 +40,13 @@ public class Singleton<T> : MonoBehaviour where T : MonoBehaviour
                     {
                         GameObject gameObject = new GameObject();
                         _instance = gameObject.AddComponent<T>();
-                        gameObject.name = "(singleton) " + typeof(T).ToString();
+                        gameObject.name = "(singleton) " + typeof(T);
                     }
                 }
+
                 instance = _instance;
             }
+
             return instance;
         }
     }
