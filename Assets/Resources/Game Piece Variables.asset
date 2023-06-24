@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   pieceMoveEase:
     easeOption: 0
-    ease: 9
+    ease: 4
     animationCurve:
       serializedVersion: 2
       m_Curve:
